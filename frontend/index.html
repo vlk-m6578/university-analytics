@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>aboba</title>
+  <link rel="stylesheet" href="static/css/style.css">
+</head>
+
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <div class="logo">title <br> long title</div>
+      <nav class="nav">
+        <a href="index.html" class="active">Main page</a>
+        <a href="recommendations.html">Recommendations</a>
+      </nav>
+      <div class="sidebar-footer">
+        <div id="footerCount">0 респондентов</div>
+      </div>
+    </aside>
+
+    <main class="main">
+      <div class="header">
+        <div>
+          <h1>title <span>continue</span></h1>
+          <p>description</p>
+        </div>
+        <div class="update-badge" id="lastUpdateDate">загрузка...</div>
+      </div>
+
+      <div class="stats">
+        <div class="stat-card">
+          <div class="stat-value" id="totalRespondents">0</div>
+          <div class="stat-label">всего участников</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="meanAge">0</div>
+          <div class="stat-label">средний возраст</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="genderRatio">0/0</div>
+          <div class="stat-label">жен / муж</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="budgetRatio">0/0</div>
+          <div class="stat-label">бюджет / контракт</div>
+        </div>
+      </div>
+
+      <div class="charts">
+        <div class="chart-box">
+          <h3>Распределение по полу</h3>
+          <div class="pie-simple">
+            <div class="pie"></div>
+            <div class="legend">
+              <div><span class="legend-dot" style="background:#6976EB"></span> Женщины</div>
+              <div><span class="legend-dot" style="background:#a9a5a566"></span> Мужчины</div>
+            </div>
+          </div>
+        </div>
+        <div class="chart-box">
+          <h3>Распределение по курсу</h3>
+          <div class="bar-chart" id="courseBars">
+            <div class="bar-item">
+              <div class="bar" style="height:80px"></div>
+              <div class="bar-label">1 курс</div>
+            </div>
+          </div>
+        </div>
+        <div class="chart-box">
+          <h3>Форма обучения</h3>
+          <div class="pie-simple">
+            <div class="pie" style="background:conic-gradient(#D9D9D9 0deg 220deg, #6976EB 220deg 360deg)"></div>
+            <div class="legend">
+              <div><span class="legend-dot" style="background:#D9D9D9"></span> Бюджет</div>
+              <div><span class="legend-dot" style="background:#6976EB"></span> Платка</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="table-wrapper">
+        <h3 style="margin-bottom:16px">Топ-5 факторов выбора вуза</h3>
+        <div class="rank-list" id="topFactorsList"></div>
+      </div>
+
+      <div class="stats-row">
+        <div class="stats-block">
+          <h3>ANOVA (F-тест)</h3>
+          <div id="anovaTable"></div>
+        </div>
+        <div class="stats-block">
+          <h3>Краскела-Уоллиса (H-тест)</h3>
+          <div id="kruskalTable"></div>
+        </div>
+      </div>
+
+      <div class="stats-block">
+        <h3>Корреляция Спирмена</h3>
+        <div id="correlationList"></div>
+      </div>
+
+      <div class="stats-block" style="margin-bottom: 24px;">
+        <h3>Множественные доверительные интервалы</h3>
+        <div style="margin: 16px 0;">
+          <label>Выберите фактор: </label>
+          <select id="ciFactorSelect"
+            style="background:#1a1d27; border:1px solid #2a2f3f; padding:8px 16px; border-radius:12px; color:white; margin-left:12px;">
+            <option value="">-- выберите фактор --</option>
+          </select>
+        </div>
+        <div id="ciChartContainer" style="min-height: 200px; padding: 16px 0;">
+          <!-- здесь будет график с доверительными интервалами -->
+        </div>
+      </div>
+      
+      <div class="stats-block">
+        <h3>Критерий Тьюки (множественное сравнение)</h3>
+        <div style="margin: 16px 0;">
+          <label>Выберите фактор: </label>
+          <select id="tukeyFactorSelect"
+            style="background:#1a1d27; border:1px solid #2a2f3f; padding:8px 16px; border-radius:12px; color:white; margin-left:12px;">
+            <option value="">-- выберите фактор --</option>
+          </select>
+        </div>
+        <div id="tukeyTableContainer">
+          <!-- здесь будет таблица попарных сравнений -->
+        </div>
+      </div>
+
+      <div class="footer">© 2026 Aboba • данные на основе опроса студентов</div>
+    </main>
+  </div>
+
+  <script src="static/js/mock-data.js"></script>
+  <script src="static/js/dashboard.js"></script>
+</body>
+
+</html>

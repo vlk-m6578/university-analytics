@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>aboba</title>
+  <link rel="stylesheet" href="static/css/style.css">
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <div class="logo">title<br>long title</div>
+      <nav class="nav">
+        <a href="index.html">Main Page</a>
+        <a href="recommendations.html" class="active">Recommendations</a>
+      </nav>
+      <div class="sidebar-footer"></div>
+    </aside>
+
+    <main class="main">
+      <div class="header">
+        <div>
+          <h1>Recommendations <span>by nickname</span></h1>
+          <p>Enter your nickname to see recommended universities</p>
+        </div>
+      </div>
+
+      <div class="filter-section">
+        <h3>Search</h3>
+        <div style="display: flex; gap: 16px; margin-top: 20px; flex-wrap: wrap;">
+          <input type="text" id="nicknameInput" placeholder="Enter nickname" style="flex:1; background:#1a1d27; border:1px solid #2a2f3f; padding:14px 18px; border-radius:16px; color:white; font-size:16px;">
+          <button id="searchBtn" class="btn" style="width: auto; padding: 14px 32px; margin-top: 0;">Search</button>
+        </div>
+        <div id="errorMessage" style="margin-top: 12px; color: #ff4d4d; display: none;"></div>
+      </div>
+
+      <div class="stats-block" style="margin-top: 24px;">
+        <h3>Quick select (временно)</h3>
+        <div id="userList" style="display: flex; flex-wrap: wrap; gap: 12px; margin-top: 16px;"></div>
+      </div>
+
+      <div id="resultsSection" style="margin-top: 32px;">
+        <h3>Recommendations</h3>
+        <div id="recommendationsGrid" class="cards" style="margin-top: 20px;">
+          <div style="color:#5a6077; text-align:center; padding:60px;">Enter nickname</div>
+        </div>
+      </div>
+
+      <div id="userInfo" style="margin-top: 24px; padding: 16px; background:#0f1117; border-radius: 16px; display: none;">
+        <!-- сюда инфу о пользователе -->
+      </div>
+
+      <div class="footer">© 2026 Aboba • рекомендации основаны на результатах опроса</div>
+    </main>
+  </div>
+
+  <script src="static/js/mock-data.js"></script>
+  <script src="static/js/recommendations.js"></script>
+</body>
+</html>
