@@ -1,8 +1,8 @@
-package pkg
+package config  // ← исправлено: было "package pkg"
 
 import (
-	"os"      
-	"strconv" 
+	"os"
+	"strconv"
 )
 
 type Config struct {
@@ -17,13 +17,13 @@ type Config struct {
 	GoogleSpreadsheetID string
 }
 
-func Load() *Config{
+func Load() *Config {
 	return &Config{
 		Port: getEnvInt("PORT", 8080),
 		DBHost:     getEnv("DB_HOST", "localhost"),
 		DBPort:     getEnvInt("DB_PORT", 5432),
 		DBUser:     getEnv("DB_USER", "postgres"),
-		DBPassword: getEnv("DB_PASSWORD", ""),
+		DBPassword: getEnv("DB_PASSWORD", "mysecretpassword"),
 		DBName:     getEnv("DB_NAME", "university_db"),
 
 		GoogleAPIKey:        getEnv("GOOGLE_API_KEY", ""),
