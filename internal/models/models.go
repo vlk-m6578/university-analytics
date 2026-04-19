@@ -15,14 +15,14 @@ type University struct{
 }
 
 type Specialty struct {
-	ID              int    `json:"id" db:"id"`
-	UniversityID    int    `json:"university_id" db:"university_id"`
-	Name            string `json:"name" db:"name"`
-	PassScoreBudget int    `json:"pass_score_budget" db:"pass_score_budget"`
-	PassScorePaid   int    `json:"pass_score_paid" db:"pass_score_paid"`
-	HasDormitory    bool   `json:"has_dormitory" db:"has_dormitory"`
-	Direction       string `json:"direction" db:"direction"` //потом подумаю какие именно
-
+	ID              int        `json:"id" db:"id"`
+	UniversityID    int        `json:"university_id" db:"university_id"`
+	University      University `json:"university"` 
+	Name            string     `json:"name" db:"name"`
+	PassScoreBudget int        `json:"pass_score_budget" db:"pass_score_budget"`
+	PassScorePaid   int        `json:"pass_score_paid" db:"pass_score_paid"`
+	HasDormitory    bool       `json:"has_dormitory" db:"has_dormitory"`
+	Direction       string     `json:"direction" db:"direction"`
 }
 
 type Recommendation struct {
@@ -57,6 +57,36 @@ type RecommendRequest struct {
 	StudyFormat        string `json:"study_format"`
 	BudgetNeeded       bool   `json:"budget_needed"`
 	DormitoryNeeded    bool   `json:"dormitory_needed"`
-	HasBVI             bool   `json:"has_bvi"`
+	HasWEE             bool   `json:"has_wee"`
 	DistanceImportance int    `json:"distance_importance"`
 }
+
+type OnboardingQuestion struct {
+	ID       int      `json:"id"`
+	Text     string   `json:"text"`      
+	Options  []Option `json:"options"`   
+}
+
+type Option struct {
+	Text      string `json:"text"`     
+	Direction string `json:"direction"` 
+	Weight    int    `json:"weight"`   
+}
+
+type OnboardingResult struct {
+	Direction     string            `json:"direction"`     
+	Confidence    float64           `json:"confidence"`    
+	Scores        map[string]int    `json:"scores"`        
+}
+
+type WebhookPayload struct {
+	Timestamp string            `json:"timestamp"`
+	RowNumber int               `json:"rowNumber"`
+	Answers   map[string]string `json:"answers"`
+}
+type FormResponseDB struct {
+	ID        int       `json:"id" db:"id"`
+	Timestamp time.Time `json:"timestamp" db:"timestamp"`
+	RawData   []byte    `json:"raw_data" db:"raw_data"` 
+}
+
