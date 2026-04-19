@@ -1,34 +1,34 @@
 package models
 
-import(
+import (
 	"time"
 )
 
-type University struct{
-	ID int `json:"id" db:"id"`
-	Name string `json:"name" db:"name"`
-	Country string `json:"country" db:"country"`
-	City string `json:"city" db:"city"`
-	Lat float64 `json:"lat" db:"lat"`
-	Lon float64 `json:"lon" db:"lon"`
-
+type University struct {
+	ID      int     `json:"id" db:"id"`
+	Name    string  `json:"name" db:"name"`
+	Country string  `json:"country" db:"country"`
+	City    string  `json:"city" db:"city"`
+	Lat     float64 `json:"lat" db:"lat"`
+	Lon     float64 `json:"lon" db:"lon"`
+	HasDormitory  bool    `json:"has_dormitory" db:"has_dormitory"`
+	
 }
 
 type Specialty struct {
 	ID              int        `json:"id" db:"id"`
 	UniversityID    int        `json:"university_id" db:"university_id"`
-	University      University `json:"university"` 
+	University      University `json:"university"`
 	Name            string     `json:"name" db:"name"`
 	PassScoreBudget int        `json:"pass_score_budget" db:"pass_score_budget"`
 	PassScorePaid   int        `json:"pass_score_paid" db:"pass_score_paid"`
-	HasDormitory    bool       `json:"has_dormitory" db:"has_dormitory"`
 	Direction       string     `json:"direction" db:"direction"`
 }
 
 type Recommendation struct {
-	University    University `json:"university"`
-	Specialty     Specialty  `json:"specialty"`
-	MatchScore    float64    `json:"match_score"`
+	University University `json:"university"`
+	Specialty  Specialty  `json:"specialty"`
+	MatchScore float64    `json:"match_score"`
 }
 
 type FormResponse struct {
@@ -62,21 +62,21 @@ type RecommendRequest struct {
 }
 
 type OnboardingQuestion struct {
-	ID       int      `json:"id"`
-	Text     string   `json:"text"`      
-	Options  []Option `json:"options"`   
+	ID      int      `json:"id"`
+	Text    string   `json:"text"`
+	Options []Option `json:"options"`
 }
 
 type Option struct {
-	Text      string `json:"text"`     
-	Direction string `json:"direction"` 
-	Weight    int    `json:"weight"`   
+	Text      string `json:"text"`
+	Direction string `json:"direction"`
+	Weight    int    `json:"weight"`
 }
 
 type OnboardingResult struct {
-	Direction     string            `json:"direction"`     
-	Confidence    float64           `json:"confidence"`    
-	Scores        map[string]int    `json:"scores"`        
+	Direction  string         `json:"direction"`
+	Confidence float64        `json:"confidence"`
+	Scores     map[string]int `json:"scores"`
 }
 
 type WebhookPayload struct {
@@ -84,9 +84,9 @@ type WebhookPayload struct {
 	RowNumber int               `json:"rowNumber"`
 	Answers   map[string]string `json:"answers"`
 }
+
 type FormResponseDB struct {
 	ID        int       `json:"id" db:"id"`
 	Timestamp time.Time `json:"timestamp" db:"timestamp"`
-	RawData   []byte    `json:"raw_data" db:"raw_data"` 
+	RawData   []byte    `json:"raw_data" db:"raw_data"`
 }
-

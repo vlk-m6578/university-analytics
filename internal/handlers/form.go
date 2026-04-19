@@ -19,14 +19,12 @@ func NewHandler(repo *repository.Repository) *Handler {
 	return &Handler{Repo: repo}
 }
 
-// WebhookPayload структура того, что приходит от Apps Script
 type WebhookPayload struct {
 	Timestamp string                 `json:"timestamp"`
 	RowNumber int                    `json:"rowNumber"`
 	Answers   map[string]interface{} `json:"answers"`
 }
 
-// FormWebhook принимает POST-запросы от Google Apps Script
 func (h *Handler) FormWebhook(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
@@ -40,19 +38,16 @@ func (h *Handler) FormWebhook(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Преобразуем все значения в строки
 	answersAsStrings := make(map[string]string)
 	for key, value := range payload.Answers {
 		answersAsStrings[key] = convertToString(value)
 	}
 
-	// Парсим время
 	timestamp, err := time.Parse(time.RFC3339, payload.Timestamp)
 	if err != nil {
 		timestamp = time.Now()
 	}
 
-	// Сохраняем в БД
 	responseID, err := h.Repo.SaveFormResponse(answersAsStrings, timestamp)
 	if err != nil {
 		log.Printf("Failed to save to DB: %v", err)
@@ -66,7 +61,6 @@ func (h *Handler) FormWebhook(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(map[string]string{"status": "ok"})
 }
 
-// convertToString преобразует любой тип в строку
 func convertToString(v interface{}) string {
 	if v == nil {
 		return ""
@@ -75,7 +69,6 @@ func convertToString(v interface{}) string {
 	case string:
 		return val
 	case float64:
-		// Если число целое — не добавляем .0
 		if val == float64(int64(val)) {
 			return strconv.FormatInt(int64(val), 10)
 		}
