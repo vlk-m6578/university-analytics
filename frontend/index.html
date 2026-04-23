@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>aboba</title>
+  <link rel="stylesheet" href="static/css/style.css">
+</head>
+
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <div class="logo">ВУЗ <br> АНАЛИТИКА</div>
+      <nav class="nav">
+        <a href="index.html" class="active">Главная</a>
+        <a href="recommendations.html">Рекомендации</a>
+      </nav>
+      <div class="sidebar-footer">
+        <div id="footerCount">0 респондентов</div>
+      </div>
+    </aside>
+
+    <main class="main">
+      <div class="header">
+        <div>
+          <h1>ГЛАВНАЯ <span>статистика</span></h1>
+          <p>Факторы, влияющие на выбор вуза студентами</p>
+        </div>
+
+        <div class="update-badge" id="lastUpdateDate">загрузка...</div>
+      </div>
+
+      <div class="stats">
+        <div class="stat-card">
+          <div class="stat-value" id="totalRespondents">0</div>
+          <div class="stat-label">всего участников</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="meanAge">0</div>
+          <div class="stat-label">средний возраст</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="genderRatio">0/0</div>
+          <div class="stat-label">жен / муж</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="budgetRatio">0/0</div>
+          <div class="stat-label">бюджет / контракт</div>
+        </div>
+      </div>
+
+      <div class="charts">
+        <div class="chart-box">
+          <h3>Распределение по полу</h3>
+          <div class="pie-simple">
+            <div class="pie"></div>
+            <div class="legend">
+              <div><span class="legend-dot" style="background:#1C1912"></span> Женщины</div>
+              <div><span class="legend-dot" style="background:#B8AF9E"></span> Мужчины</div>
+            </div>
+          </div>
+        </div>
+        <div class="chart-box">
+          <h3 style="padding-bottom: 35px;">Распределение по курсу</h3>
+          <div class="bar-chart" id="courseBars">
+            <div class="bar-item">
+              <div class="bar" style="height:80px"></div>
+              <div class="bar-label">1 курс</div>
+            </div>
+          </div>
+        </div>
+        <div class="chart-box">
+          <h3>Форма обучения</h3>
+          <div class="pie-simple">
+            <div class="pie" style="background:conic-gradient(#B8AF9E 0deg 220deg, #1C1912 220deg 360deg)"></div>
+            <div class="legend">
+              <div><span class="legend-dot" style="background:#B8AF9E"></span> Бюджет</div>
+              <div><span class="legend-dot" style="background:#1C1912"></span> Платка</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="table-wrapper">
+        <h3 style="margin-bottom:16px">Топ-5 факторов выбора вуза</h3>
+        <div class="rank-list" id="topFactorsList"></div>
+      </div>
+
+      <div class="stats-row">
+        <div class="stats-block">
+          <h3><span class="term"
+              data-tooltip="ANOVA (анализ дисперсии) - проверяет, есть ли значимые различия между средними значениями в группах">ANOVA
+              (F-тест)</span></h3>
+          <div id="anovaTable"></div>
+        </div>
+        <div class="stats-block">
+          <h3><span class="term"
+              data-tooltip="Краскела-Уоллиса - непараметрический аналог ANOVA, используется когда данные не подчиняются нормальному распределению">Краскела-Уоллиса
+              (H-тест)</span></h3>
+          <div id="kruskalTable"></div>
+        </div>
+      </div>
+
+      <div class="stats-block">
+        <h3><span class="term"
+            data-tooltip="Корреляция Спирмена - показывает силу и направление связи между двумя факторами (от -1 до +1)">Корреляция
+            Спирмена</span></h3>
+        <div id="correlationList"></div>
+      </div>
+
+      <div class="stats-block" style="margin-bottom: 24px;">
+        <h3><span class="term"
+            data-tooltip="95% доверительные интервалы - диапазон, в котором с вероятностью 95% находится истинное среднее значение">Множественные
+            доверительные интервалы</span></h3>
+        <div style="margin: 16px 0;">
+          <label>Выберите фактор: </label>
+          <select id="ciFactorSelect"
+            style="background:#1a1d27; border:1px solid #2a2f3f; padding:8px 16px; border-radius:12px; color:white; margin-left:12px;">
+            <option value="">-- выберите фактор --</option>
+          </select>
+        </div>
+        <div id="ciChartContainer" style="min-height: 200px; padding: 16px 0;">
+        </div>
+      </div>
+
+      <div class="stats-block">
+        <h3><span class="term"
+            data-tooltip="Критерий Тьюки - попарное сравнение всех групп для выявления, какие именно группы отличаются">Критерий
+            Тьюки (множественное сравнение)</span></h3>
+        <div style="margin: 16px 0;">
+          <label>Выберите фактор: </label>
+          <select id="tukeyFactorSelect"
+            style="background:#1a1d27; border:1px solid #2a2f3f; padding:8px 16px; border-radius:12px; color:white; margin-left:12px;">
+            <option value="">-- выберите фактор --</option>
+          </select>
+        </div>
+        <div id="tukeyTableContainer">
+        </div>
+      </div>
+
+      <div class="footer">© 2026 ВУЗ АНАЛИТИКА • данные на основе опроса студентов</div>
+    </main>
+  </div>
+
+  <script src="static/js/mock-data.js"></script>
+  <script src="static/js/dashboard.js"></script>
+</body>
+
+</html>
