@@ -13,14 +13,14 @@ function renderUserList(users) {
   if (!container) return;
 
   container.innerHTML = users.map(user => `
-        <button class="user-chip" data-user-id="${user.id}">
-            ${user.nickname} (ID: ${user.id})
+        <button class="user-chip" data-nickname="${user.nickname}">
+            ${user.nickname}
         </button>
     `).join('');
 
   document.querySelectorAll('.user-chip').forEach(btn => {
     btn.addEventListener('click', () => {
-      document.getElementById('userIdInput').value = btn.dataset.userId;
+      document.getElementById('nicknameInput').value = btn.dataset.nickname;
       searchRecommendations();
     });
   });
@@ -261,64 +261,57 @@ window.showUniversityDetails = function (universityName) {
 }
 
 async function searchRecommendations() {
-  const userId = document.getElementById('userIdInput').value.trim();
+  const nickname = document.getElementById('nicknameInput').value.trim();
   const errorDiv = document.getElementById('errorMessage');
   const resultsGrid = document.getElementById('recommendationsGrid');
   const userInfoDiv = document.getElementById('userInfo');
-  const shareBtn = document.getElementById('shareResultsBtn');
 
-  if (!userId) {
+  if (!nickname) {
     errorDiv.style.display = 'block';
-    errorDiv.innerText = 'Введите ID';
-    if (shareBtn) shareBtn.style.display = 'none';
+    errorDiv.innerText = 'Введите никнейм';
+    errorDiv.style.animation = 'shake 0.5s';
+    setTimeout(() => {
+      errorDiv.style.animation = '';
+    }, 500);
     return;
   }
 
   errorDiv.style.display = 'none';
   resultsGrid.innerHTML = '<div class="loading">Загрузка рекомендаций...</div>';
-  if (shareBtn) shareBtn.style.display = 'none';
 
-  // TODO: когда бэк добавит эндпоинт /api/recommendations/{userId}
-  // const data = await API.fetchRecommendations(userId);
-
-  // Пока используем mock
-  const user = allUsers.find(u => u.id.toString() === userId);
-  if (!user) {
-    errorDiv.style.display = 'block';
-    errorDiv.innerText = 'Пользователь не найден';
-    if (shareBtn) shareBtn.style.display = 'none';
-    return;
-  }
-
-  const data = await mockAPI('/api/recommendations', { nickname: user.nickname });
+  const data = await mockAPI('/api/recommendations', { nickname });
 
   if (!data.success) {
     errorDiv.style.display = 'block';
-    errorDiv.innerText = 'Рекомендации не найдены';
+    errorDiv.innerText = '❌ Пользователь не найден';
     return;
   }
 
-  if (shareBtn) shareBtn.style.display = 'flex';
-
-  // Отображение информации о пользователе
-  userInfoDiv.style.display = 'block';
-  userInfoDiv.innerHTML = `
-        <div class="user-info-card">
-            <div class="user-info-header">
-                <span class="user-emoji">👤</span>
-                <strong class="user-nickname">${user.nickname} (ID: ${user.id})</strong>
-                <button class="user-info-close" onclick="document.getElementById('userInfo').style.display='none'">✕</button>
+  const user = allUsers.find(u => u.nickname === nickname);
+  if (user) {
+    userInfoDiv.style.display = 'block';
+    userInfoDiv.innerHTML = `
+            <div class="user-info-card">
+                <div class="user-info-header">
+                    <span class="user-emoji">👤</span>
+                    <strong class="user-nickname">${user.nickname}</strong>
+                    <button class="user-info-close" onclick="document.getElementById('userInfo').style.display='none'">✕</button>
+                </div>
+                <div class="user-info-details">
+                    <span class="user-detail">${user.age} лет</span>
+                    <span class="user-detail">${user.gender === 'male' ? '♂ Мужской' : '♀ Женский'}</span>
+                    <span class="user-detail">${user.course} курс</span>
+                    <span class="user-detail">${user.education_form === 'budget' ? 'Бюджет' : 'Контракт'}</span>
+                </div>
             </div>
-            <div class="user-info-details">
-                <span class="user-detail">${user.age} лет</span>
-                <span class="user-detail">${user.gender === 'male' ? '♂ Мужской' : '♀ Женский'}</span>
-                <span class="user-detail">${user.course} курс</span>
-                <span class="user-detail">${user.education_form === 'budget' ? 'Бюджет' : 'Контракт'}</span>
-            </div>
-        </div>
-    `;
+        `;
+  }
 
-  renderRecommendations(data.recommendations.recommendations);
+  let recs = data.recommendations.recommendations;
+  renderRecommendations(recs);
+
+  const filterSection = document.getElementById('filterControls');
+  if (filterSection) filterSection.style.display = 'flex';
 }
 
 async function shareRecommendations() {
@@ -479,9 +472,9 @@ document.addEventListener('DOMContentLoaded', () => {
     searchBtn.addEventListener('click', searchRecommendations);
   }
 
-  const userIdInput = document.getElementById('userIdInput');
-  if (userIdInput) {
-    userIdInput.addEventListener('keypress', e => {
+  const nicknameInput = document.getElementById('nicknameInput');
+  if (nicknameInput) {
+    nicknameInput.addEventListener('keypress', e => {
       if (e.key === 'Enter') searchRecommendations();
     });
   }
