@@ -75,7 +75,6 @@ func (r *Repository) GetAllUniversities() ([]models.University, error) {
 	return universities, nil
 }
 
-// GetSpecialtiesByDirection возвращает специальности по направлению
 func (r *Repository) GetSpecialtiesByDirection(direction string) ([]models.Specialty, error) {
 	rows, err := r.db.Query(`
 		SELECT s.id, s.university_id, s.name, s.pass_score_budget, s.pass_score_paid, s.has_dormitory, s.direction,
@@ -101,4 +100,31 @@ func (r *Repository) GetSpecialtiesByDirection(direction string) ([]models.Speci
 		specialties = append(specialties, s)
 	}
 	return specialties, nil
+}
+
+
+func (r *Repository) GetFormResponsesAsMaps() ([]map[string]string, error) {
+    rows, err := r.db.Query(`SELECT raw_data FROM form_responses ORDER BY id`)
+    if err != nil {
+        return nil, fmt.Errorf("failed to query form_responses: %w", err)
+    }
+    defer rows.Close()
+
+    var results []map[string]string
+    for rows.Next() {
+        var rawData []byte
+        if err := rows.Scan(&rawData); err != nil {
+            return nil, fmt.Errorf("failed to scan row: %w", err)
+        }
+
+        var answers map[string]string
+        if err := json.Unmarshal(rawData, &answers); err != nil {
+            log.Printf("Warning: failed to unmarshal raw_data: %v", err)
+            continue
+        }
+        results = append(results, answers)
+    }
+
+    log.Printf("Retrieved %d form responses", len(results))
+    return results, nil
 }

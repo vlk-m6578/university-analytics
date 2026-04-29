@@ -90,3 +90,29 @@ type FormResponseDB struct {
 	RawData   []byte    `json:"raw_data" db:"raw_data"` 
 }
 
+type FactorRankingItem struct {
+    FactorName string  `json:"factor_name"` 
+    Average    float64 `json:"average"`     
+    Count      int     `json:"count"`     
+    Rank       int     `json:"rank"`       
+}
+
+type RankingResult struct {
+    Factors []FactorRankingItem `json:"factors"` 
+}
+
+
+type AnovaResult struct {
+    GroupName    string  `json:"group_name"`   
+    FValue       float64 `json:"f_value"`       
+    PValue       float64 `json:"p_value"`      
+    Significant  bool    `json:"significant"`  
+    Groups       []AnovaGroup `json:"groups"`  
+}
+
+type AnovaGroup struct {
+    Name   string  `json:"name"`
+    Mean   float64 `json:"mean"`
+    StdDev float64 `json:"std_dev"`
+    Count  int     `json:"count"`
+}
