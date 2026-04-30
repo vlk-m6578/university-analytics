@@ -66,7 +66,7 @@ func (r *Repository) GetAllUniversities() ([]models.University, error) {
 	var universities []models.University
 	for rows.Next() {
 		var u models.University
-		err := rows.Scan(&u.ID, &u.Name, &u.City, &u.Country, &u.Lat, &u.Lon)
+		err := rows.Scan(&u.ID, &u.Name, &u.City, &u.Lat, &u.Lon)
 		if err != nil {
 			return nil, err
 		}
@@ -92,7 +92,7 @@ func (r *Repository) GetSpecialtiesByDirection(direction string) ([]models.Speci
 		var s models.Specialty
 		var u models.University
 		err := rows.Scan(&s.ID, &s.UniversityID, &s.Name, &s.PassScoreBudget, &s.PassScorePaid, &s.HasDormitory, &s.Direction,
-			&u.ID, &u.Name, &u.City, &u.Country, &u.Lat, &u.Lon)
+			&u.ID, &u.Name, &u.City, &u.Lat, &u.Lon)
 		if err != nil {
 			return nil, err
 		}

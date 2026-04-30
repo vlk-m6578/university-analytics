@@ -7,7 +7,6 @@ import(
 type University struct{
 	ID int `json:"id" db:"id"`
 	Name string `json:"name" db:"name"`
-	Country string `json:"country" db:"country"`
 	City string `json:"city" db:"city"`
 	Lat float64 `json:"lat" db:"lat"`
 	Lon float64 `json:"lon" db:"lon"`
@@ -45,20 +44,29 @@ type FormResponse struct {
 	HasWEE             bool   `json:"has_wee" db:"has_wee"`
 	DistanceImportance int    `json:"distance_importance" db:"distance_importance"`
 }
+//для крутых
+type Benefits struct {
+    GoldMedal          bool `json:"gold_medal"`
+    SilverMedal        bool `json:"silver_medal"`
+    RepublicanOlympiad bool `json:"republican_olympiad"`
+    RegionalOlympiad   bool `json:"regional_olympiad"`
+    SportsRank         bool `json:"sports_rank"`
+    UniversityDiploma  bool `json:"university_diploma"`
+}
 
 type TopRecommendationsResponse struct {
 	Recommendations []Recommendation `json:"recommendations"`
 }
 
 type RecommendRequest struct {
-	AvgScore           int    `json:"avg_score"`
-	City               string `json:"city"`
-	Direction          string `json:"direction"`
-	StudyFormat        string `json:"study_format"`
-	BudgetNeeded       bool   `json:"budget_needed"`
-	DormitoryNeeded    bool   `json:"dormitory_needed"`
-	HasWEE             bool   `json:"has_wee"`
-	DistanceImportance int    `json:"distance_importance"`
+    AvgScore           int      `json:"avg_score"`
+    City               string   `json:"city"`
+    Direction          string   `json:"direction"`
+    StudyFormat        string   `json:"study_format"`
+    BudgetNeeded       bool     `json:"budget_needed"`
+    DormitoryNeeded    bool     `json:"dormitory_needed"`
+    DistanceImportance int      `json:"distance_importance"`
+    Benefits           Benefits `json:"benefits"`
 }
 
 type OnboardingQuestion struct {
@@ -116,3 +124,5 @@ type AnovaGroup struct {
     StdDev float64 `json:"std_dev"`
     Count  int     `json:"count"`
 }
+
+
