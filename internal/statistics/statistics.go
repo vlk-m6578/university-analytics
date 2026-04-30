@@ -17,7 +17,7 @@ func CalculateAll(responses []map[string]string) *FullStatistics {
 		AnovaBudget:         AnovaOnBudgetImportance(responses),
 		AnovaDistance:       AnovaOnDistanceImportance(responses),
 		AnovaDormitory:      AnovaOnDormitoryImportance(responses),
-		KruskalWallis:       KruskalWallisByDirectionAndCountry(responses),
+		KruskalWallis:       KruskalWallisByDirection(responses),
 		Spearman:            SpearmanBudgetImportance(responses),
 		Tukey:               TukeyHSDByDirection(responses),
 		ConfidenceIntervals: ConfidenceIntervalsForFactors(responses),
