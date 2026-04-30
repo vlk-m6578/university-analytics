@@ -57,7 +57,7 @@ func (r *Repository) SaveFormResponse(answers map[string]string, timestamp time.
 }
 
 func (r *Repository) GetAllUniversities() ([]models.University, error) {
-	rows, err := r.db.Query(`SELECT id, name, city, country, lat, lon FROM universities`)
+	rows, err := r.db.Query(`SELECT id, name, city, lat, lon FROM universities`)
 	if err != nil {
 		return nil, err
 	}
@@ -76,32 +76,33 @@ func (r *Repository) GetAllUniversities() ([]models.University, error) {
 }
 
 func (r *Repository) GetSpecialtiesByDirection(direction string) ([]models.Specialty, error) {
-	rows, err := r.db.Query(`
-		SELECT s.id, s.university_id, s.name, s.pass_score_budget, s.pass_score_paid, s.has_dormitory, s.direction,
-		       u.id, u.name, u.city, u.country, u.lat, u.lon
-		FROM specialties s
-		JOIN universities u ON s.university_id = u.id
-		WHERE s.direction = $1 OR $1 = ''`, direction)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
+    rows, err := r.db.Query(`
+        SELECT s.id, s.university_id, s.name, s.pass_score_budget, s.pass_score_paid, s.direction,
+               u.id, u.name, u.city, u.lat, u.lon, u.has_dormitory
+        FROM specialties s
+        JOIN universities u ON s.university_id = u.id
+        WHERE s.direction = $1 OR $1 = ''`, direction)
+    if err != nil {
+        return nil, err
+    }
+    defer rows.Close()
 
-	var specialties []models.Specialty
-	for rows.Next() {
-		var s models.Specialty
-		var u models.University
-		err := rows.Scan(&s.ID, &s.UniversityID, &s.Name, &s.PassScoreBudget, &s.PassScorePaid, &s.HasDormitory, &s.Direction,
-			&u.ID, &u.Name, &u.City, &u.Lat, &u.Lon)
-		if err != nil {
-			return nil, err
-		}
-		s.University = u
-		specialties = append(specialties, s)
-	}
-	return specialties, nil
+    var specialties []models.Specialty
+    for rows.Next() {
+        var s models.Specialty
+        var u models.University
+        err := rows.Scan(
+            &s.ID, &s.UniversityID, &s.Name, &s.PassScoreBudget, &s.PassScorePaid, &s.Direction,
+            &u.ID, &u.Name, &u.City, &u.Lat, &u.Lon, &u.HasDormitory,
+        )
+        if err != nil {
+            return nil, err
+        }
+        s.University = u
+        specialties = append(specialties, s)
+    }
+    return specialties, nil
 }
-
 
 func (r *Repository) GetFormResponsesAsMaps() ([]map[string]string, error) {
     rows, err := r.db.Query(`SELECT raw_data FROM form_responses ORDER BY id`)

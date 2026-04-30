@@ -4,31 +4,27 @@ import(
 	"time"
 )
 
-type University struct{
-	ID int `json:"id" db:"id"`
-	Name string `json:"name" db:"name"`
-	City string `json:"city" db:"city"`
-	Lat float64 `json:"lat" db:"lat"`
-	Lon float64 `json:"lon" db:"lon"`
-
+type University struct {
+    ID            int     `json:"id" db:"id"`
+    Name          string  `json:"name" db:"name"`
+    City          string  `json:"city" db:"city"`
+    Lat           float64 `json:"lat" db:"lat"`
+    Lon           float64 `json:"lon" db:"lon"`
+    HasDormitory  bool    `json:"has_dormitory" db:"has_dormitory"` 
 }
 
 type Specialty struct {
-	ID              int        `json:"id" db:"id"`
-	UniversityID    int        `json:"university_id" db:"university_id"`
-	University      University `json:"university"` 
-	Name            string     `json:"name" db:"name"`
-	PassScoreBudget int        `json:"pass_score_budget" db:"pass_score_budget"`
-	PassScorePaid   int        `json:"pass_score_paid" db:"pass_score_paid"`
-	HasDormitory    bool       `json:"has_dormitory" db:"has_dormitory"`
-	Direction       string     `json:"direction" db:"direction"`
+    ID              int        `json:"id" db:"id"`
+    UniversityID    int        `json:"university_id" db:"university_id"`
+    University      University `json:"university"`
+    Name            string     `json:"name" db:"name"`
+    PassScoreBudget int        `json:"pass_score_budget" db:"pass_score_budget"`
+    PassScorePaid   int        `json:"pass_score_paid" db:"pass_score_paid"`
+    Direction       string     `json:"direction" db:"direction"`
+    StudyFormat     string     `json:"study_format" db:"study_format"`
+    MedalAdmission  bool       `json:"medal_admission" db:"medal_admission"`
 }
 
-type Recommendation struct {
-	University    University `json:"university"`
-	Specialty     Specialty  `json:"specialty"`
-	MatchScore    float64    `json:"match_score"`
-}
 
 type FormResponse struct {
     ID        int       `json:"id" db:"id"`
@@ -60,12 +56,18 @@ type TopRecommendationsResponse struct {
 	Recommendations []Recommendation `json:"recommendations"`
 }
 
+
+type Recommendation struct {
+    UniversityName string  `json:"university_name"`
+    UniversityCity string  `json:"university_city"`
+    SpecialtyName  string  `json:"specialty_name"`
+    Direction      string  `json:"direction"`
+    MatchScore     float64 `json:"match_score"`
+    DistanceKm     float64 `json:"distance_km"`
+}
 type RecommendRequest struct {
-
-
-	Age                string `json:"age"`
-    Gender             string `json:"gender"`
-
+    Age                string   `json:"age"`
+    Gender             string   `json:"gender"`
     AvgScore           int      `json:"avg_score"`
     City               string   `json:"city"`
     Direction          string   `json:"direction"`
