@@ -31,18 +31,20 @@ type Recommendation struct {
 }
 
 type FormResponse struct {
-	ID        int       `json:"id" db:"id"`
-	SessionID string    `json:"session_id" db:"session_id"`
-	Timestamp time.Time `json:"timestamp" db:"timestamp"`
+    ID        int       `json:"id" db:"id"`
+    SessionID string    `json:"session_id" db:"session_id"`
+    Timestamp time.Time `json:"timestamp" db:"timestamp"`
 
-	AvgScore           int    `json:"avg_score" db:"avg_score"`
-	City               string `json:"city" db:"city"`
-	Direction          string `json:"direction" db:"direction"`
-	StudyFormat        string `json:"study_format" db:"study_format"`
-	BudgetNeeded       bool   `json:"budget_needed" db:"budget_needed"`
-	DormitoryNeeded    bool   `json:"dormitory_needed" db:"dormitory_needed"`
-	HasWEE             bool   `json:"has_wee" db:"has_wee"`
-	DistanceImportance int    `json:"distance_importance" db:"distance_importance"`
+    Age                string   `json:"age"`
+    Gender             string   `json:"gender"`
+    AvgScore           int      `json:"avg_score"`
+    City               string   `json:"city"`
+    Direction          string   `json:"direction"`
+    StudyFormat        string   `json:"study_format"`
+    BudgetNeeded       bool     `json:"budget_needed"`
+    DormitoryNeeded    bool     `json:"dormitory_needed"`
+    DistanceImportance int      `json:"distance_importance"`
+    Benefits           Benefits `json:"benefits"`
 }
 //для крутых
 type Benefits struct {
@@ -59,6 +61,11 @@ type TopRecommendationsResponse struct {
 }
 
 type RecommendRequest struct {
+
+
+	Age                string `json:"age"`
+    Gender             string `json:"gender"`
+
     AvgScore           int      `json:"avg_score"`
     City               string   `json:"city"`
     Direction          string   `json:"direction"`

@@ -40,19 +40,16 @@ func (h *Handler) FormWebhook(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Преобразуем все значения в строки
 	answersAsStrings := make(map[string]string)
 	for key, value := range payload.Answers {
 		answersAsStrings[key] = convertToString(value)
 	}
 
-	// Парсим время
 	timestamp, err := time.Parse(time.RFC3339, payload.Timestamp)
 	if err != nil {
 		timestamp = time.Now()
 	}
 
-	// Сохраняем в БД
 	responseID, err := h.Repo.SaveFormResponse(answersAsStrings, timestamp)
 	if err != nil {
 		log.Printf("Failed to save to DB: %v", err)
@@ -75,7 +72,6 @@ func convertToString(v interface{}) string {
 	case string:
 		return val
 	case float64:
-		// Если число целое — не добавляем .0
 		if val == float64(int64(val)) {
 			return strconv.FormatInt(int64(val), 10)
 		}
