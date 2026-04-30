@@ -8,15 +8,20 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/km/university-analytics/internal/recommender"
 	"github.com/km/university-analytics/internal/repository"
 )
 
 type Handler struct {
-	Repo *repository.Repository
+	Repo        *repository.Repository
+	Recommender *recommender.Recommender
 }
 
-func NewHandler(repo *repository.Repository) *Handler {
-	return &Handler{Repo: repo}
+func NewHandler(repo *repository.Repository, rec *recommender.Recommender) *Handler {
+	return &Handler{
+		Repo:        repo,
+		Recommender: rec,
+	}
 }
 
 // WebhookPayload структура того, что приходит от Apps Script
@@ -63,7 +68,6 @@ func (h *Handler) FormWebhook(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(map[string]string{"status": "ok"})
 }
 
-// convertToString преобразует любой тип в строку
 func convertToString(v interface{}) string {
 	if v == nil {
 		return ""
