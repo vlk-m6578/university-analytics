@@ -32,18 +32,18 @@ async function fetchStatistics() {
   return apiRequest('/api/stats');
 }
 
-async function fetchRecommendations(userId) {
-  return apiRequest(`/api/recommendations/${userId}`);
-}
-
 async function fetchResponses() {
   return apiRequest('/api/responses');
+}
+
+async function postRecommendations(requestData) {
+  return apiRequest('/api/recommend', requestData, 'POST');
 }
 
 window.API = {
   fetchStatistics,
   fetchResponses,
-  fetchRecommendations,
+  postRecommendations,
   checkBackendHealth,
   USE_MOCK
 };

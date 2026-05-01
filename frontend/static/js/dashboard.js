@@ -84,7 +84,6 @@ function addStatTooltips() {
 function updateDashboardStats(responses) {
   const total = responses.length;
 
-  // Возраст
   let ages = [];
   let maleCount = 0, femaleCount = 0;
   let scores = [];
@@ -108,7 +107,7 @@ function updateDashboardStats(responses) {
   animateValue(document.getElementById('meanAge'), 0, meanAge, 1000, '');
   document.getElementById('genderRatio').innerHTML = `${femaleCount} / ${maleCount}`;
   document.getElementById('avgScore').innerHTML = meanScore;
-  document.getElementById('footerCount').innerHTML = `${total} респондентов`;
+  document.getElementById('footerCount').innerHTML = `${total} участников`;
 }
 
 function renderGenderChart(responses) {
@@ -142,7 +141,7 @@ function renderStudyFormatChart(responses) {
   if (pie) {
     pie.style.background = `conic-gradient(#B8AF9E 0deg ${fulltimePercent}deg, #1C1912 ${fulltimePercent}deg 360deg)`;
   }
-  // Обновляем легенду
+
   const legend = document.querySelector('.chart-box:last-child .legend');
   if (legend) {
     legend.innerHTML = `
@@ -163,11 +162,9 @@ function renderConfidenceIntervals(intervals) {
   let html = '<div style="width:100%; overflow-x: hidden;">';
 
   intervals.forEach(ci => {
-    // Ограничиваем значения, чтобы они не выходили за 0-100%
     let leftPercent = ((ci.lower - 0) / (maxVal - 0)) * 100;
     let widthPercent = ((ci.upper - ci.lower) / (maxVal - 0)) * 100;
 
-    // Защита от выхода за границы
     leftPercent = Math.max(0, Math.min(100, leftPercent));
     widthPercent = Math.max(0, Math.min(100 - leftPercent, widthPercent));
 
@@ -221,7 +218,6 @@ function renderLanguagesChart(responses) {
   responses.forEach(r => {
     let lang = r[" Какой язык программирования Вам ближе?"];
     if (lang) {
-      // Нормализуем названия (убираем лишние пробелы)
       lang = lang.trim();
       langMap[lang] = (langMap[lang] || 0) + 1;
     }
@@ -249,14 +245,12 @@ function renderLanguagesChart(responses) {
 }
 
 async function loadDashboard() {
-  // Загружаем статистику
   const stats = await API.fetchStatistics();
   if (!stats) {
     console.warn('Нет данных от бэка');
     return;
   }
 
-  // Загружаем сырые ответы для карточек и графиков
   const responses = await API.fetchResponses();
   if (responses && responses.length > 0) {
     updateDashboardStats(responses);
