@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"time"
+	"strings"
 
 	_ "github.com/lib/pq"
 	"github.com/km/university-analytics/internal/models"
@@ -129,3 +130,31 @@ func (r *Repository) GetFormResponsesAsMaps() ([]map[string]string, error) {
     log.Printf("Retrieved %d form responses", len(results))
     return results, nil
 }
+
+
+// GetCityCoordinates возвращает координаты города по названию
+// GetCityCoordinates возвращает координаты города по названию
+func (r *Repository) GetCityCoordinates(cityName string) (float64, float64, error) {
+    var lat, lon float64
+    query := `SELECT lat, lon FROM cities WHERE name = $1`
+    err := r.db.QueryRow(query, cityName).Scan(&lat, &lon)
+    if err != nil {
+        return 0, 0, err
+    }
+    return lat, lon, nil
+}
+
+func normalizeCityName(city string) string {
+    if city == "" {
+        return ""
+    }
+    return strings.ToUpper(city[:1]) + strings.ToLower(city[1:])
+}
+
+// SaveCity сохраняет город в таблицу cities
+func (r *Repository) SaveCity(name string, lat, lon float64) error {
+    query := `INSERT INTO cities (name, lat, lon) VALUES ($1, $2, $3) ON CONFLICT (name) DO UPDATE SET lat = $2, lon = $3`
+    _, err := r.db.Exec(query, name, lat, lon)
+    return err
+}
+
