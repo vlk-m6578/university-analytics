@@ -4,6 +4,7 @@ import(
 	"time"
 )
 
+
 type University struct {
     ID            int     `json:"id" db:"id"`
     Name          string  `json:"name" db:"name"`
@@ -12,19 +13,17 @@ type University struct {
     Lon           float64 `json:"lon" db:"lon"`
     HasDormitory  bool    `json:"has_dormitory" db:"has_dormitory"` 
 }
-
 type Specialty struct {
     ID              int        `json:"id" db:"id"`
     UniversityID    int        `json:"university_id" db:"university_id"`
     University      University `json:"university"`
     Name            string     `json:"name" db:"name"`
     PassScoreBudget int        `json:"pass_score_budget" db:"pass_score_budget"`
-    PassScorePaid   int        `json:"pass_score_paid" db:"pass_score_paid"`
+    PassScorePaid   *int       `json:"pass_score_paid" db:"pass_score_paid"` 
     Direction       string     `json:"direction" db:"direction"`
     StudyFormat     string     `json:"study_format" db:"study_format"`
     MedalAdmission  bool       `json:"medal_admission" db:"medal_admission"`
 }
-
 
 type FormResponse struct {
     ID        int       `json:"id" db:"id"`
@@ -44,12 +43,12 @@ type FormResponse struct {
 }
 //для крутых
 type Benefits struct {
-    GoldMedal          bool `json:"gold_medal"`
-    SilverMedal        bool `json:"silver_medal"`
-    RepublicanOlympiad bool `json:"republican_olympiad"`
-    RegionalOlympiad   bool `json:"regional_olympiad"`
-    SportsRank         bool `json:"sports_rank"`
-    UniversityDiploma  bool `json:"university_diploma"`
+    GoldMedal           bool `json:"gold_medal"`
+    SilverMedal         bool `json:"silver_medal"`
+    RepublicanOlympiad  bool `json:"republican_olympiad"`
+    RegionalOlympiad    bool `json:"regional_olympiad"`
+    FirstSportsRank     bool `json:"first_sports_rank"`
+    UniversityDiploma   bool `json:"university_diploma"`
 }
 
 type TopRecommendationsResponse struct {
@@ -66,16 +65,18 @@ type Recommendation struct {
     DistanceKm     float64 `json:"distance_km"`
 }
 type RecommendRequest struct {
-    Age                string   `json:"age"`
-    Gender             string   `json:"gender"`
-    AvgScore           int      `json:"avg_score"`
-    City               string   `json:"city"`
-    Direction          string   `json:"direction"`
-    StudyFormat        string   `json:"study_format"`
-    BudgetNeeded       bool     `json:"budget_needed"`
-    DormitoryNeeded    bool     `json:"dormitory_needed"`
-    DistanceImportance int      `json:"distance_importance"`
-    Benefits           Benefits `json:"benefits"`
+    Age                string            `json:"age"`
+    Gender             string            `json:"gender"`
+    AvgScore           float64           `json:"avg_score"`
+    AvgGrade           float64           `json:"avg_grade"`
+    City               string            `json:"city"`
+    Direction          string            `json:"direction"`
+    StudyFormat        string            `json:"study_format"`
+    BudgetImportance   int               `json:"budget_importance"`
+    DormitoryImportance int              `json:"dormitory_importance"`
+    DistanceImportance int               `json:"distance_importance"`
+    Benefits           Benefits          `json:"benefits"`
+    Answers            map[string]string `json:"answers"`
 }
 
 type OnboardingQuestion struct {

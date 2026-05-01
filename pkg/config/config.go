@@ -1,4 +1,4 @@
-package config  // ← исправлено: было "package pkg"
+package config
 
 import (
 	"os"
@@ -15,6 +15,7 @@ type Config struct {
 
 	GoogleAPIKey      string
 	GoogleSpreadsheetID string
+	DeepSeekAPIKey      string
 }
 
 func Load() *Config {
@@ -28,6 +29,7 @@ func Load() *Config {
 
 		GoogleAPIKey:        getEnv("GOOGLE_API_KEY", ""),
 		GoogleSpreadsheetID: getEnv("GOOGLE_SPREADSHEET_ID", ""),
+		DeepSeekAPIKey:      getEnv("DEEPSEEK_API_KEY", ""),
 	}
 }
 

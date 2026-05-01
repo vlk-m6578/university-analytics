@@ -6,21 +6,25 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/km/university-analytics/internal/recommender"
 	"github.com/km/university-analytics/internal/repository"
+	"github.com/km/university-analytics/pkg/config"
 )
 
 type Handler struct {
 	Repo        *repository.Repository
 	Recommender *recommender.Recommender
+	Cfg         *config.Config
 }
 
-func NewHandler(repo *repository.Repository, rec *recommender.Recommender) *Handler {
+func NewHandler(repo *repository.Repository, rec *recommender.Recommender, cfg *config.Config) *Handler {
 	return &Handler{
 		Repo:        repo,
 		Recommender: rec,
+		Cfg:         cfg,
 	}
 }
 
@@ -90,4 +94,10 @@ func convertToString(v interface{}) string {
 	default:
 		return fmt.Sprintf("%v", val)
 	}
+}
+
+func convertToFloat(s string) float64 {
+	s = strings.ReplaceAll(s, ",", ".")
+	f, _ := strconv.ParseFloat(s, 64)
+	return f
 }

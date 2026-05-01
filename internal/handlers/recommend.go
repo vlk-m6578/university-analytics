@@ -19,7 +19,22 @@ func (h *Handler) RecommendHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	recommendations, err := h.Recommender.GetRecommendations(req)
+	// Если есть answers, определяем направление автоматически
+	if req.Answers != nil && len(req.Answers) > 0 {
+		recommendations, err := h.Recommender.GetRecommendationsForAnswers(req.Answers, h.Cfg.DeepSeekAPIKey, req)
+		if err != nil {
+			http.Error(w, "Failed to get recommendations", http.StatusInternalServerError)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(map[string]interface{}{
+			"recommendations": recommendations,
+		})
+		return
+	}
+
+	// Если нет answers, используем direction из запроса
+	recommendations, err := h.Recommender.GetRecommendationsByDirection(req, req.Direction)
 	if err != nil {
 		http.Error(w, "Failed to get recommendations", http.StatusInternalServerError)
 		return

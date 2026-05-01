@@ -22,7 +22,7 @@ func main() {
 	defer repo.Close()
 
 	rec := recommender.NewRecommender(repo)
-	h := handlers.NewHandler(repo, rec)
+	h := handlers.NewHandler(repo, rec, cfg)
 
 	r := router.NewRouter(h)
 
