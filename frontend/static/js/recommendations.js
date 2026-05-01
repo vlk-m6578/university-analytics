@@ -52,30 +52,15 @@ function transformToRecommendRequest(rawData, userId) {
     silver_medal: benefitsText.includes("Серебряная медаль"),
     republican_olympiad: benefitsText.includes("республиканской олимпиады"),
     regional_olympiad: benefitsText.includes("областной олимпиады"),
-    first_sports_rank: benefitsText.includes("Спортивные разряды"),
+    sports_rank: benefitsText.includes("Спортивные разряды"),
     university_diploma: benefitsText.includes("Диплом универсиады")
   };
 
-  const answers = {};
-  const onboardingQuestions = [
-    "С чем Вы уже знакомы?",
-    "Кем Вы работаете или стажируетесь?",
-    "Какой самый большой проект Вы уже делали?",
-    "С чем Вам интереснее работать?",
-    "Какую задачу Вы бы выбрали?",
-    "Какой язык программирования Вам ближе?"
-  ];
-
-  onboardingQuestions.forEach(q => {
-    const value = getValue(q);
-    if (value) answers[q] = value;
-  });
-
-  // Определяем направление из профессии (на случай, если DeepSeek не сработает)
+  // Определяем направление из профессии
   let direction = "";
   const job = getValue("Кем Вы работаете или стажируетесь?");
-
-  if (job.includes("Mobile")) direction = "Embedded";
+  
+  if (job.includes("Mobile")) direction = "Mobile";
   else if (job.includes("Data")) direction = "DataScience";
   else if (job.includes("Frontend")) direction = "Frontend";
   else if (job.includes("Backend")) direction = "Backend";
@@ -83,21 +68,18 @@ function transformToRecommendRequest(rawData, userId) {
   else if (job.includes("Embedded")) direction = "Embedded";
   else direction = "Backend";
 
-  const hasAllAnswers = onboardingQuestions.every(q => getValue(q));
-
   return {
     age: getValue("Ваш возраст?") || "",
     gender: getValue("Ваш пол?") || "",
-    avg_score: parseFloat(getValue("Введите сумму баллов ЦТ и ЦЭ (0-300):")) || 0,
-    avg_grade: parseFloat(getValue("Введите средний балл аттестата:")) || 0,
+    avg_score: parseInt(getValue("Введите сумму баллов ЦТ и ЦЭ (0-300):")) || 0,
+    avg_grade: parseFloat(rawData["Введите средний балл аттестата:"]) || 0,
     city: getValue("В каком городе Вы живёте?") || "",
     direction: direction,
     study_format: getValue("Какой формат обучения Вам подходит?") || "Очный (дневной)",
-    budget_importance: parseInt(getValue("Насколько для Вас важно поступление на бюджетную форму обучения?")) || 5,
-    dormitory_importance: parseInt(getValue("Насколько для Вас важно наличие общежития?")) || 5,
+    budget_needed: parseInt(getValue("Насколько для Вас важно поступление на бюджетную форму обучения?")) >= 6,
+    dormitory_needed: parseInt(getValue("Насколько для Вас важно наличие общежития?")) >= 6,
     distance_importance: parseInt(getValue("Насколько для Вас важна близость ВУЗа к дому?")) || 5,
-    benefits: benefits,
-    answers: hasAllAnswers ? answers : {}
+    benefits: benefits
   };
 }
 
