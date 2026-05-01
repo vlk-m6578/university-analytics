@@ -27,3 +27,13 @@ func (h *Handler) GetStats(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(fullStats)
 }
+
+func (h *Handler) GetResponses(w http.ResponseWriter, r *http.Request) {
+	responses, err := h.Repo.GetFormResponsesAsMaps()
+	if err != nil {
+		http.Error(w, "Failed to get data", http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(responses)
+}

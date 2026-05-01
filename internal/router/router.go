@@ -13,6 +13,7 @@ func NewRouter(h *handlers.Handler) *mux.Router {
 	r.HandleFunc("/api/form-webhook", h.FormWebhook).Methods("POST")
 	r.HandleFunc("/api/stats", h.GetStats).Methods("GET")
 	r.HandleFunc("/api/recommend", h.RecommendHandler).Methods("POST")
+	r.HandleFunc("/api/responses", h.GetResponses).Methods("GET")
 
 	r.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)

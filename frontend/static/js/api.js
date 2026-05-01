@@ -36,8 +36,13 @@ async function fetchRecommendations(userId) {
   return apiRequest(`/api/recommendations/${userId}`);
 }
 
+async function fetchResponses() {
+  return apiRequest('/api/responses');
+}
+
 window.API = {
   fetchStatistics,
+  fetchResponses,
   fetchRecommendations,
   checkBackendHealth,
   USE_MOCK
