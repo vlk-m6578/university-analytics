@@ -11,7 +11,7 @@ const UNIVERSITY_IMAGES = {
   "ГГУ им. Скорины": ["./static/img/gsu/gsu3.jpg", "./static/img/gsu/gsu2.webp", "./static/img/gsu/gsu1.jpg"],
   "БелГУТ": ["./static/img/bsut/bsut1.jpg", "./static/img/bsut/bsut2.jpg", "./static/img/bsut/bsut3.jpg"],
   "ГГТУ им. Сухого": ["./static/img/gstu/gstu1.jpg", "./static/img/gstu/gstu2.jpg", "./static/img/gstu/gstu3.jpg"],
-  "ГрГУ им. Купалы": ["./static/img/grsu/grsu1.jpg", "./static/img/grsu/grsu2.jpg", "./static/img/grsu/grsu3.jpg"],
+  "ГрГУ им. Купалы": ["./static/img/grsu/grsu3.jpg", "./static/img/grsu/grsu2.jpg", "./static/img/grsu/grsu1.jpg"],
   "ВГУ им. Машерова": ["./static/img/vsu/vsu1.jpg", "./static/img/vsu/vsu2.jpg", "./static/img/vsu/vsu3.jpg"],
   "ВГТУ": ["./static/img/vstu/vstu1.jpg", "./static/img/vstu/vstu2.webp", "./static/img/vstu/vstu3.jpg"],
 

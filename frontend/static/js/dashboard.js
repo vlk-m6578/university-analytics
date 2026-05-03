@@ -216,7 +216,7 @@ function renderTukeyTable(pairs) {
 function renderLanguagesChart(responses) {
   const langMap = {};
   responses.forEach(r => {
-    let lang = r[" Какой язык программирования Вам ближе?"];
+    let lang = r["Какой язык программирования Вам ближе?"];
     if (lang) {
       lang = lang.trim();
       langMap[lang] = (langMap[lang] || 0) + 1;

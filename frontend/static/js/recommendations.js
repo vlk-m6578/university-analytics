@@ -3,7 +3,6 @@ const USE_RECOMMENDATIONS_MOCK = false;
 let allResponses = [];
 let currentRecommendations = [];
 
-// Загрузка всех ответов из БД
 async function loadResponses() {
   const data = await API.fetchResponses();
   if (data && Array.isArray(data)) {
@@ -14,7 +13,6 @@ async function loadResponses() {
   }
 }
 
-// Отображение списка пользователей (по ID и городу)
 function renderUserList(responses) {
   const container = document.getElementById('userList');
   if (!container) return;
@@ -38,14 +36,12 @@ function renderUserList(responses) {
   });
 }
 
-// Преобразование raw_data в RecommendRequest
 function transformToRecommendRequest(rawData, userId) {
   function getValue(key) {
     const matchedKey = Object.keys(rawData).find(k => k.trim() === key);
     return matchedKey ? rawData[matchedKey] : "";
   }
 
-  // Парсим льготы
   const benefitsText = getValue("Какие льготы или индивидуальные достижения у вас есть?") || "";
   const benefits = {
     gold_medal: benefitsText.includes("Золотая медаль"),
@@ -56,10 +52,9 @@ function transformToRecommendRequest(rawData, userId) {
     university_diploma: benefitsText.includes("Диплом универсиады")
   };
 
-  // Определяем направление из профессии
   let direction = "";
   const job = getValue("Кем Вы работаете или стажируетесь?");
-  
+
   if (job.includes("Mobile")) direction = "Mobile";
   else if (job.includes("Data")) direction = "DataScience";
   else if (job.includes("Frontend")) direction = "Frontend";
@@ -83,7 +78,6 @@ function transformToRecommendRequest(rawData, userId) {
   };
 }
 
-// Отображение рекомендаций (адаптировано под структуру бэка)
 function renderRecommendations(recs) {
   const container = document.getElementById('recommendationsGrid');
   if (!container) return;
@@ -115,7 +109,7 @@ function renderRecommendations(recs) {
         <div class="city-badge">📍${rec.university_city}</div>
         </div>
         <div class="uni-reason">${rec.specialty_name || rec.direction}</div>
-        
+        <div class="uni-reason">Расстояние: ${rec.distance_km?.toFixed(1) || '?'} км</div>
         <div class="uni-reason">Направление: ${rec.direction}</div>
         <a href="${siteUrl}" target="_blank" rel="noopener noreferrer" class="uni-detail-btn" style="display: block; text-align: center; text-decoration: none;">
           Подробнее →
@@ -141,7 +135,6 @@ function renderRecommendations(recs) {
   });
 }
 
-// Поиск рекомендаций по ID
 async function searchRecommendations() {
   const userId = document.getElementById('userIdInput').value.trim();
   const errorDiv = document.getElementById('errorMessage');
@@ -170,7 +163,6 @@ async function searchRecommendations() {
     return;
   }
 
-  // Показываем информацию о пользователе
   userInfoDiv.style.display = 'block';
   userInfoDiv.innerHTML = `
     <div class="user-info-card">
@@ -183,6 +175,13 @@ async function searchRecommendations() {
         <span class="user-detail">${userData["Ваш пол?"] === "Мужской" ? '♂ Мужской' : (userData["Ваш пол?"] === "Женский" ? '♀ Женский' : '?')}</span>
         <span class="user-detail">📍 ${userData["В каком городе Вы живёте?"] || '?'}</span>
         <span class="user-detail">${userData["Какой формат обучения Вам подходит?"] || '?'}</span>
+        <span class="user-detail">${userData["Какой язык программирования Вам ближе?"] || '?'}</span>
+        <span class="user-detail">Баллы ЦТ/ЦЭ: ${userData["Введите сумму баллов ЦТ и ЦЭ (0-300):"] || '?'}</span>
+        <span class="user-detail">Средний балл: ${userData["Введите средний балл аттестата:"] ? parseFloat(userData["Введите средний балл аттестата:"]).toFixed(1) : '?'}</span>
+        <span class="user-detail">Важность бюджета: ${userData["Насколько для Вас важно поступление на бюджетную форму обучения?"] || '?'}</span>
+        <span class="user-detail">Важность близости: ${userData["Насколько для Вас важна близость ВУЗа к дому?"] || '?'}</span>
+        <span class="user-detail">Важность общежития: ${userData["Насколько для Вас важно наличие общежития?"] || '?'}</span>
+        <span class="user-detail">Льготы: ${userData["Какие льготы или индивидуальные достижения у вас есть?"] || '?'}</span>
       </div>
     </div>
   `;
@@ -191,7 +190,6 @@ async function searchRecommendations() {
 
   console.log('Отправляем запрос на /api/recommend:', JSON.stringify(requestData, null, 2));
 
-  // Отправляем POST-запрос на /api/recommend
   let response;
   if (USE_RECOMMENDATIONS_MOCK) {
     response = await mockRecommendationsAPI('/api/recommend');
@@ -200,6 +198,11 @@ async function searchRecommendations() {
   }
 
   console.log('Ответ от бэка:', response);
+
+  if (response && response.recommendations) {
+    // Фильтруем: оставляем только вузы с match_score > 0
+    response.recommendations = response.recommendations.filter(rec => rec.match_score > 0);
+  }
 
   if (response && response.recommendations) {
     renderRecommendations(response.recommendations);
@@ -225,14 +228,13 @@ async function shareRecommendations() {
     return;
   }
 
-  shareBtn.innerHTML = '⏳ Подготовка...';
+  shareBtn.innerHTML = 'Подготовка...';
   shareBtn.disabled = true;
 
   try {
     const userInfoDiv = document.getElementById('userInfo');
     const userName = userInfoDiv.querySelector('.user-nickname')?.innerText || `ID: ${userId}`;
 
-    // Формируем текстовый отчёт
     let report = `ВУЗ-АНАЛИТИКА
 Рекомендации на основе ваших предпочтений
 Пользователь: ${userName}
