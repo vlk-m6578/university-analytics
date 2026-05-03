@@ -2,7 +2,6 @@ package recommender
 
 import (
 	"log"
-	"math"
 	"sort"
 
 	"github.com/km/university-analytics/internal/models"
@@ -28,39 +27,90 @@ type RecommendationResult struct {
 }
 
 func (r *Recommender) GetRecommendationsByDirection(req models.RecommendRequest, direction string) ([]RecommendationResult, error) {
-	log.Printf("=== GetRecommendationsByDirection: %s, city=%s, format=%s", direction, req.City, req.StudyFormat)
+	return r.getFilteredRecommendations(req, direction, true, true)
+}
 
+func (r *Recommender) GetRecommendationsForAnswers(answers map[string]string, apiKey string, req models.RecommendRequest) ([]RecommendationResult, error) {
+	directions := DetermineDirection(answers, apiKey)
+	log.Printf("Determined directions: %v", directions)
+
+	if len(directions) == 0 {
+		directions = []string{"Backend"}
+	}
+
+	return r.getRecommendationsWithFallback(req, directions)
+}
+
+func (r *Recommender) getRecommendationsWithFallback(req models.RecommendRequest, directions []string) ([]RecommendationResult, error) {
+	fallbackLevels := []struct {
+		name        string
+		useDistance bool
+		useDorm     bool
+		expandDir   bool
+	}{
+		{"Жёсткие фильтры", true, true, false},
+		{"Отключаем расстояние", false, true, false},
+		{"Отключаем общежитие", false, false, false},
+		{"Расширяем направления", false, false, true},
+		{"Только направление (без фильтров)", false, false, true},
+	}
+
+	var lastError error
+
+	for _, level := range fallbackLevels {
+		var allResults []RecommendationResult
+
+		searchDirs := directions
+		if level.expandDir && len(directions) == 1 {
+			searchDirs = r.expandDirections(directions[0])
+		}
+
+		for _, dir := range searchDirs {
+			results, err := r.getFilteredRecommendations(req, dir, level.useDistance, level.useDorm)
+			if err != nil {
+				lastError = err
+				continue
+			}
+			allResults = append(allResults, results...)
+		}
+
+		if len(allResults) > 0 {
+			finalResults := r.SortResults(allResults, req.City, req.AvgScore+req.AvgGrade*10)
+			if len(finalResults) > 0 {
+				log.Printf("Found %d recommendations at level: %s", len(finalResults), level.name)
+				return finalResults, nil
+			}
+		}
+	}
+
+	return nil, lastError
+}
+
+func (r *Recommender) getFilteredRecommendations(req models.RecommendRequest, direction string, useDistanceFilter, useDormFilter bool) ([]RecommendationResult, error) {
 	specialties, err := r.repo.GetSpecialtiesByDirection(direction)
 	if err != nil {
-		log.Printf("Error getting specialties: %v", err)
 		return nil, err
 	}
-	log.Printf("Found %d specialties for direction %s", len(specialties), direction)
 
 	var results []RecommendationResult
 
 	for _, spec := range specialties {
-		// 1. Фильтрация по формату обучения
 		if spec.StudyFormat != "" && spec.StudyFormat != req.StudyFormat {
 			continue
 		}
 
-		// 2. Фильтрация по общежитию (если очень важно 8-10, но нет общежития)
-		if req.DormitoryImportance >= 8 && !spec.University.HasDormitory {
+		if useDormFilter && req.DormitoryImportance >= 8 && !spec.University.HasDormitory {
 			continue
 		}
 
-		// 3. Проверка прохода по баллам/льготам
 		passes, _ := r.checkPassScore(req, spec)
 		if !passes {
 			continue
 		}
 
-		// 4. Расчёт расстояния
 		distance := r.calculateDistance(req.City, spec.University.Lat, spec.University.Lon)
 
-		// 5. Фильтрация по расстоянию
-		if req.DistanceImportance >= 6 {
+		if useDistanceFilter && req.DistanceImportance >= 6 {
 			if req.DistanceImportance >= 8 && distance > 150 {
 				continue
 			}
@@ -69,7 +119,6 @@ func (r *Recommender) GetRecommendationsByDirection(req models.RecommendRequest,
 			}
 		}
 
-		// Добавляем в результаты
 		results = append(results, RecommendationResult{
 			UniversityName:  spec.University.Name,
 			UniversityCity:  spec.University.City,
@@ -81,56 +130,72 @@ func (r *Recommender) GetRecommendationsByDirection(req models.RecommendRequest,
 		})
 	}
 
-	// Сортировка по проходному баллу (от большего к меньшему) — лучшие специальности первыми
 	sort.Slice(results, func(i, j int) bool {
 		return results[i].PassScoreBudget > results[j].PassScoreBudget
 	})
 
-	// Топ-5
-	if len(results) > 5 {
-		results = results[:5]
-	}
-
-	log.Printf("Returning %d recommendations for direction %s", len(results), direction)
 	return results, nil
 }
 
-func (r *Recommender) GetRecommendationsForAnswers(answers map[string]string, apiKey string, req models.RecommendRequest) ([]RecommendationResult, error) {
-	directions := DetermineDirection(answers, apiKey)
-	log.Printf("Determined directions: %v", directions)
+func (r *Recommender) SortResults(results []RecommendationResult, userCity string, totalScore float64) []RecommendationResult {
+	var minskResults, regionalResults []RecommendationResult
 
-	var allResults []RecommendationResult
-
-	for _, dir := range directions {
-		results, err := r.GetRecommendationsByDirection(req, dir)
-		if err != nil {
-			log.Printf("Error getting recommendations for direction %s: %v", dir, err)
-			continue
+	for _, res := range results {
+		if res.UniversityCity == "Минск" {
+			minskResults = append(minskResults, res)
+		} else {
+			regionalResults = append(regionalResults, res)
 		}
-		allResults = append(allResults, results...)
 	}
 
-	// Сортировка по проходному баллу (от большего к меньшему)
-	sort.Slice(allResults, func(i, j int) bool {
-		return allResults[i].PassScoreBudget > allResults[j].PassScoreBudget
+	sort.Slice(minskResults, func(i, j int) bool {
+		return minskResults[i].PassScoreBudget > minskResults[j].PassScoreBudget
 	})
 
-	if len(allResults) > 5 {
-		allResults = allResults[:5]
+	sort.Slice(regionalResults, func(i, j int) bool {
+		return regionalResults[i].PassScoreBudget > regionalResults[j].PassScoreBudget
+	})
+
+	var finalResults []RecommendationResult
+
+	if userCity == "Минск" && totalScore >= 330 {
+		finalResults = append(finalResults, minskResults...)
+		finalResults = append(finalResults, regionalResults...)
+	} else {
+		finalResults = append(finalResults, minskResults...)
+		finalResults = append(finalResults, regionalResults...)
 	}
 
-	return allResults, nil
+	if len(finalResults) > 5 {
+		finalResults = finalResults[:5]
+	}
+
+	return finalResults
+}
+
+func (r *Recommender) expandDirections(direction string) []string {
+	expansionMap := map[string][]string{
+		"Mobile":      {"Frontend", "Backend"},
+		"Frontend":    {"Mobile", "Backend"},
+		"Backend":     {"DevOps", "DataScience"},
+		"DevOps":      {"Backend", "Embedded"},
+		"DataScience": {"Backend", "Embedded"},
+		"Embedded":    {"DevOps", "Backend"},
+	}
+
+	if expanded, ok := expansionMap[direction]; ok {
+		return append([]string{direction}, expanded...)
+	}
+	return []string{direction}
 }
 
 func (r *Recommender) checkPassScore(req models.RecommendRequest, spec models.Specialty) (bool, bool) {
 	totalScore := req.AvgScore + req.AvgGrade*10
 
-	// Республиканская олимпиада → БВИ на любую специальность
 	if req.Benefits.RepublicanOlympiad {
 		return true, true
 	}
 
-	// Золотая медаль
 	if req.Benefits.GoldMedal {
 		if totalScore >= float64(spec.PassScoreBudget) {
 			return true, false
@@ -141,14 +206,12 @@ func (r *Recommender) checkPassScore(req models.RecommendRequest, spec models.Sp
 		return false, false
 	}
 
-	// Первый взрослый разряд → БВИ на платное
 	if req.Benefits.FirstSportsRank && req.BudgetImportance < 8 {
 		if spec.PassScorePaid != nil && *spec.PassScorePaid > 0 {
 			return true, true
 		}
 	}
 
-	// Обычная проверка баллов
 	if totalScore >= float64(spec.PassScoreBudget) {
 		return true, false
 	}
@@ -166,12 +229,118 @@ func (r *Recommender) calculateDistance(userCity string, uniLat, uniLon float64)
 }
 
 func haversine(lat1, lon1, lat2, lon2 float64) float64 {
-	const R = 6371
-	dLat := (lat2 - lat1) * math.Pi / 180
-	dLon := (lon2 - lon1) * math.Pi / 180
-	a := math.Sin(dLat/2)*math.Sin(dLat/2) +
-		math.Cos(lat1*math.Pi/180)*math.Cos(lat2*math.Pi/180)*
-			math.Sin(dLon/2)*math.Sin(dLon/2)
-	c := 2 * math.Atan2(math.Sqrt(a), math.Sqrt(1-a))
+	const R = 6371.0
+	lat1Rad := lat1 * 3.141592653589793 / 180
+	lon1Rad := lon1 * 3.141592653589793 / 180
+	lat2Rad := lat2 * 3.141592653589793 / 180
+	lon2Rad := lon2 * 3.141592653589793 / 180
+
+	dLat := lat2Rad - lat1Rad
+	dLon := lon2Rad - lon1Rad
+
+	a := sin(dLat/2)*sin(dLat/2) + cos(lat1Rad)*cos(lat2Rad)*sin(dLon/2)*sin(dLon/2)
+	c := 2 * atan2(sqrt(a), sqrt(1-a))
+
 	return R * c
+}
+
+// Вспомогательные математические функции
+func sin(x float64) float64 {
+	return sinImpl(x)
+}
+
+func cos(x float64) float64 {
+	return cosImpl(x)
+}
+
+func atan2(y, x float64) float64 {
+	return atan2Impl(y, x)
+}
+
+func sqrt(x float64) float64 {
+	return sqrtImpl(x)
+}
+
+func sinImpl(x float64) float64 {
+	return sinApprox(x)
+}
+
+func cosImpl(x float64) float64 {
+	return cosApprox(x)
+}
+
+func atan2Impl(y, x float64) float64 {
+	return atan2Approx(y, x)
+}
+
+func sqrtImpl(x float64) float64 {
+	return sqrtApprox(x)
+}
+
+func sinApprox(x float64) float64 {
+	for x > 3.141592653589793*2 {
+		x -= 3.141592653589793 * 2
+	}
+	for x < 0 {
+		x += 3.141592653589793 * 2
+	}
+	result := x
+	term := x
+	for i := 1; i < 10; i++ {
+		term *= -x * x / float64((2*i)*(2*i+1))
+		result += term
+	}
+	return result
+}
+
+func cosApprox(x float64) float64 {
+	for x > 3.141592653589793*2 {
+		x -= 3.141592653589793 * 2
+	}
+	for x < 0 {
+		x += 3.141592653589793 * 2
+	}
+	result := 1.0
+	term := 1.0
+	for i := 1; i < 10; i++ {
+		term *= -x * x / float64((2*i-1)*2*i)
+		result += term
+	}
+	return result
+}
+
+func atan2Approx(y, x float64) float64 {
+	if x == 0 {
+		if y > 0 {
+			return 3.141592653589793 / 2
+		}
+		if y < 0 {
+			return -3.141592653589793 / 2
+		}
+		return 0
+	}
+	angle := atanApprox(y / x)
+	if x < 0 {
+		if y >= 0 {
+			angle += 3.141592653589793
+		} else {
+			angle -= 3.141592653589793
+		}
+	}
+	return angle
+}
+
+func atanApprox(x float64) float64 {
+	return x - x*x*x/3 + x*x*x*x*x/5 - x*x*x*x*x*x*x/7
+}
+
+func sqrtApprox(x float64) float64 {
+	if x <= 0 {
+		return 0
+	}
+	guess := x / 2
+	for i := 0; i < 10; i++ {
+		guess = (guess + x/guess) / 2
+	}
+	return guess
 }

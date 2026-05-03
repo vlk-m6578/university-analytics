@@ -19,7 +19,7 @@ func (h *Handler) RecommendHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Если есть answers, определяем направление автоматически
+	// Если есть answers, определяем направление автоматически и используем fallback логику
 	if req.Answers != nil && len(req.Answers) > 0 {
 		recommendations, err := h.Recommender.GetRecommendationsForAnswers(req.Answers, h.Cfg.DeepSeekAPIKey, req)
 		if err != nil {
@@ -34,14 +34,16 @@ func (h *Handler) RecommendHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Если нет answers, используем direction из запроса
-	recommendations, err := h.Recommender.GetRecommendationsByDirection(req, req.Direction)
+	results, err := h.Recommender.GetRecommendationsByDirection(req, req.Direction)
 	if err != nil {
 		http.Error(w, "Failed to get recommendations", http.StatusInternalServerError)
 		return
 	}
 
+	finalResults := h.Recommender.SortResults(results, req.City, req.AvgScore+req.AvgGrade*10)
+
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]interface{}{
-		"recommendations": recommendations,
+		"recommendations": finalResults,
 	})
 }
