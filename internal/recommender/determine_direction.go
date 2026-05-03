@@ -257,46 +257,49 @@ func addScoreByDirection(scores *DirectionScores, direction string, points int) 
 	}
 }
 
-// getBestDirections возвращает все направления с максимальным баллом
+// getBestDirections возвращает все направления, у которых балл близок к максимальному
+// Если разница между максимальным и другими ≤ threshold, включаем их
 func getBestDirections(scores DirectionScores) []string {
-	// Находим максимальный балл
-	maxScore := scores.DataScience
-	if scores.Frontend > maxScore {
-		maxScore = scores.Frontend
-	}
-	if scores.DevOps > maxScore {
-		maxScore = scores.DevOps
-	}
-	if scores.Backend > maxScore {
-		maxScore = scores.Backend
-	}
-	if scores.Mobile > maxScore {
-		maxScore = scores.Mobile
-	}
-	if scores.Embedded > maxScore {
-		maxScore = scores.Embedded
-	}
+    threshold := 3 // разница в баллах, при которой считаем направления равнозначными
 
-	// Собираем все направления с максимальным баллом
-	var bestDirections []string
-	if scores.DataScience == maxScore {
-		bestDirections = append(bestDirections, "DataScience")
-	}
-	if scores.Frontend == maxScore {
-		bestDirections = append(bestDirections, "Frontend")
-	}
-	if scores.DevOps == maxScore {
-		bestDirections = append(bestDirections, "DevOps")
-	}
-	if scores.Backend == maxScore {
-		bestDirections = append(bestDirections, "Backend")
-	}
-	if scores.Mobile == maxScore {
-		bestDirections = append(bestDirections, "Mobile")
-	}
-	if scores.Embedded == maxScore {
-		bestDirections = append(bestDirections, "Embedded")
-	}
+    // Находим максимальный балл
+    maxScore := scores.DataScience
+    if scores.Frontend > maxScore {
+        maxScore = scores.Frontend
+    }
+    if scores.DevOps > maxScore {
+        maxScore = scores.DevOps
+    }
+    if scores.Backend > maxScore {
+        maxScore = scores.Backend
+    }
+    if scores.Mobile > maxScore {
+        maxScore = scores.Mobile
+    }
+    if scores.Embedded > maxScore {
+        maxScore = scores.Embedded
+    }
 
-	return bestDirections
+    // Собираем направления, у которых балл >= maxScore - threshold
+    var bestDirections []string
+    if scores.DataScience >= maxScore-threshold {
+        bestDirections = append(bestDirections, "DataScience")
+    }
+    if scores.Frontend >= maxScore-threshold {
+        bestDirections = append(bestDirections, "Frontend")
+    }
+    if scores.DevOps >= maxScore-threshold {
+        bestDirections = append(bestDirections, "DevOps")
+    }
+    if scores.Backend >= maxScore-threshold {
+        bestDirections = append(bestDirections, "Backend")
+    }
+    if scores.Mobile >= maxScore-threshold {
+        bestDirections = append(bestDirections, "Mobile")
+    }
+    if scores.Embedded >= maxScore-threshold {
+        bestDirections = append(bestDirections, "Embedded")
+    }
+
+    return bestDirections
 }
