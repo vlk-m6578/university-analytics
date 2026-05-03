@@ -66,10 +66,20 @@ func (h *Handler) FormWebhook(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	log.Printf("Received form response: row %d, saved as ID %d", payload.RowNumber, responseID)
+	sessionID, err := h.Repo.GetSessionIDByResponseID(responseID)
+	if err != nil {
+		sessionID = ""
+	}
 
+	log.Printf("Received form response: row %d, saved as ID %d, session: %s", payload.RowNumber, responseID, sessionID)
+
+	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(map[string]string{"status": "ok"})
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"status":      "ok",
+		"session_id":  sessionID,
+		"response_id": responseID,
+	})
 }
 
 func convertToString(v interface{}) string {

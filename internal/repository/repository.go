@@ -39,7 +39,7 @@ func (r *Repository) Close() error {
 	return r.db.Close()
 }
 
-// SaveFormResponse сохраняет ответ из вебхука
+// SaveFormResponse сохраняет ответ из вебхука и возвращает ID
 func (r *Repository) SaveFormResponse(answers map[string]string, timestamp time.Time) (int, error) {
     jsonData, err := json.Marshal(answers)
     if err != nil {
@@ -53,12 +53,49 @@ func (r *Repository) SaveFormResponse(answers map[string]string, timestamp time.
         return 0, fmt.Errorf("failed to insert response: %w", err)
     }
 
-    log.Printf("Saved form response with ID: %d", id)
+    // Генерируем session_id
+    sessionID := fmt.Sprintf("session_%d_%d", id, time.Now().Unix())
+    
+    // Обновляем запись с session_id
+    updateQuery := `UPDATE form_responses SET session_id = $1 WHERE id = $2`
+    _, err = r.db.Exec(updateQuery, sessionID, id)
+    if err != nil {
+        log.Printf("Warning: failed to update session_id: %v", err)
+    }
+
+    log.Printf("Saved form response with ID: %d, SessionID: %s", id, sessionID)
     return id, nil
 }
 
+// GetSessionIDByResponseID возвращает session_id по id ответа
+func (r *Repository) GetSessionIDByResponseID(responseID int) (string, error) {
+    var sessionID string
+    query := `SELECT session_id FROM form_responses WHERE id = $1`
+    err := r.db.QueryRow(query, responseID).Scan(&sessionID)
+    if err != nil {
+        return "", err
+    }
+    return sessionID, nil
+}
+
+// GetFormResponsesBySessionID получает ответы по session_id
+func (r *Repository) GetFormResponsesBySessionID(sessionID string) (map[string]string, error) {
+    var rawData []byte
+    query := `SELECT raw_data FROM form_responses WHERE session_id = $1`
+    err := r.db.QueryRow(query, sessionID).Scan(&rawData)
+    if err != nil {
+        return nil, err
+    }
+    
+    var answers map[string]string
+    if err := json.Unmarshal(rawData, &answers); err != nil {
+        return nil, err
+    }
+    return answers, nil
+}
+
 func (r *Repository) GetAllUniversities() ([]models.University, error) {
-	rows, err := r.db.Query(`SELECT id, name, city, lat, lon FROM universities`)
+	rows, err := r.db.Query(`SELECT id, name, city, lat, lon, has_dormitory FROM universities`)
 	if err != nil {
 		return nil, err
 	}
@@ -67,7 +104,7 @@ func (r *Repository) GetAllUniversities() ([]models.University, error) {
 	var universities []models.University
 	for rows.Next() {
 		var u models.University
-		err := rows.Scan(&u.ID, &u.Name, &u.City, &u.Lat, &u.Lon)
+		err := rows.Scan(&u.ID, &u.Name, &u.City, &u.Lat, &u.Lon, &u.HasDormitory)
 		if err != nil {
 			return nil, err
 		}
@@ -131,8 +168,6 @@ func (r *Repository) GetFormResponsesAsMaps() ([]map[string]string, error) {
     return results, nil
 }
 
-
-// GetCityCoordinates возвращает координаты города по названию
 // GetCityCoordinates возвращает координаты города по названию
 func (r *Repository) GetCityCoordinates(cityName string) (float64, float64, error) {
     var lat, lon float64
@@ -157,4 +192,3 @@ func (r *Repository) SaveCity(name string, lat, lon float64) error {
     _, err := r.db.Exec(query, name, lat, lon)
     return err
 }
-
