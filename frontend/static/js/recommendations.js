@@ -209,7 +209,7 @@ async function searchRecommendations() {
     if (shareBtn) shareBtn.style.display = 'flex';
   } else {
     console.error('❌ Ошибка: рекомендации не пришли', response);
-    resultsGrid.innerHTML = '<div style="color:#5a6077; text-align:center; padding:60px;">❌ Не удалось получить рекомендации</div>';
+    resultsGrid.innerHTML = '<div style="color:#5a6077; text-align:center; padding:60px;">Для вас нет подходящих вузов! ;(</div>';
     if (shareBtn) shareBtn.style.display = 'none';
   }
 }

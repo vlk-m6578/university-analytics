@@ -12,5 +12,30 @@ services:
       - postgres_data:/var/lib/postgresql/data
       - ./migrations:/docker-entrypoint-initdb.d
 
+  backend:
+    build: .
+    container_name: university-backend
+    ports:
+      - "8080:8080"
+    depends_on:
+      - postgres
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USER: postgres
+      DB_PASSWORD: mysecretpassword
+      DB_NAME: university_db
+      DEEPSEEK_API_KEY: ${DEEPSEEK_API_KEY}
+
+  ngrok:
+    image: ngrok/ngrok:latest
+    container_name: university-ngrok
+    restart: unless-stopped
+    command: http backend:8080
+    ports:
+      - "4040:4040"
+    environment:
+      NGROK_AUTHTOKEN: ${NGROK_AUTHTOKEN}
+
 volumes:
   postgres_data:

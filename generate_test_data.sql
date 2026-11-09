@@ -21,7 +21,7 @@ DECLARE
     random_study_format TEXT;
     random_direction TEXT;
 BEGIN
-    FOR i IN 1..100 LOOP
+    FOR i IN 1..167 LOOP
         -- Возраст 18-25
         random_age := 18 + floor(random() * 8);
         
@@ -41,8 +41,8 @@ BEGIN
             END CASE;
         END IF;
         
-        -- Баллы (200-380)
-        random_score := 200 + floor(random() * 180);
+        -- Баллы (180-300)
+        random_score := 180 + floor(random() * 121);
         
         -- Аттестат (6.0-10.0)
         random_grade := 6.0 + (random() * 4.0);

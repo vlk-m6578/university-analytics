@@ -188,25 +188,41 @@ function renderConfidenceIntervals(intervals) {
   container.innerHTML = html;
 }
 
-function renderTukeyTable(pairs) {
+function renderTukeyTable(pairs, groupMeans) {
   const container = document.getElementById('tukeyTableContainer');
   if (!container || !pairs?.length) {
-    container.innerHTML = '<div style="color:#6B6355; padding:40px; text-align:center">Нет данных для критерия Тьюки</div>';
+    if (container) container.innerHTML = '<div style="color:#6B6355; padding:40px; text-align:center">Нет данных для критерия Тьюки</div>';
     return;
   }
+
   const html = `
     <table class="stats-table" style="width:100%; border-collapse: collapse; margin-top: 16px;">
-      <thead><tr><th>Группа 1</th><th>Группа 2</th><th>Разница средних</th><th>p-value</th><th>Значимость</th></tr></thead>
+      <thead>
+        <tr><th>Группа 1</th><th>Группа 2</th><th>Разница средних</th><th>p-value</th><th>Значимость</th></tr>
+      </thead>
       <tbody>
-        ${pairs.map(p => `
-          <tr>
-            <td>${p.group1}</td>
-            <td>${p.group2}</td>
-            <td>${p.mean_diff.toFixed(2)}</td>
-            <td>${p.p_value.toFixed(4)}</td>
-            <td class="${p.significant ? 'sig-yes' : 'sig-no'}">${p.significant ? '✓ значимо' : '○ не значимо'}</td>
-          </tr>
-        `).join('')}
+        ${pairs.map(p => {
+    // Определяем, у какой группы средний балл выше
+    const mean1 = groupMeans[p.group1];
+    const mean2 = groupMeans[p.group2];
+    const isGroup1Higher = mean1 > mean2;
+    const isGroup2Higher = mean2 > mean1;
+
+    // Выбираем стрелку для группы 1
+    const arrow1 = isGroup1Higher ? '↑' : (isGroup2Higher ? '↓' : '−');
+    // Выбираем стрелку для группы 2
+    const arrow2 = isGroup2Higher ? '↑' : (isGroup1Higher ? '↓' : '−');
+
+    return `
+            <tr>
+              <td>${p.group1} <span style="color: ${isGroup1Higher ? '#4CAF50' : '#f44336'}; font-weight: bold;">${arrow1}</span></td>
+              <td>${p.group2} <span style="color: ${isGroup2Higher ? '#4CAF50' : '#f44336'}; font-weight: bold;">${arrow2}</span></td>
+              <td>${p.mean_diff.toFixed(2)}</td>
+              <td>${p.p_value.toFixed(4)}</td>
+              <td class="${p.significant ? 'sig-yes' : 'sig-no'}">${p.significant ? '✓ значимо' : '○ не значимо'}</td>
+            </tr>
+          `;
+  }).join('')}
       </tbody>
     </table>
   `;
@@ -316,7 +332,7 @@ async function loadDashboard() {
 
   // ========== ТЬЮКИ ==========
   const tukeyPairs = stats.tukey?.pairs || [];
-  renderTukeyTable(tukeyPairs);
+  renderTukeyTable(tukeyPairs, stats.tukey.group_means);
 
   addStatTooltips();
 
