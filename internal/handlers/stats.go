@@ -37,3 +37,22 @@ func (h *Handler) GetResponses(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(responses)
 }
+
+func (h *Handler) GetSimulation(w http.ResponseWriter, r *http.Request) {
+	responses, err := h.Repo.GetFormResponsesAsMaps()
+	if err != nil {
+		log.Printf("Error reading responses: %v", err)
+		http.Error(w, "Failed to get data", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+
+	result := statistics.SimulateBudgetImportance(responses)
+	if result == nil {
+		json.NewEncoder(w).Encode(map[string]string{"message": "not enough data"})
+		return
+	}
+
+	json.NewEncoder(w).Encode(result)
+}
