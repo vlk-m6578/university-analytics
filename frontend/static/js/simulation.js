@@ -61,7 +61,6 @@ function renderBootstrap(b) {
     ${kv('Разница средних', fmt(b.diff, 2))}
     ${kv('95% ДИ', `[${fmt(b.ci_low, 2)}; ${fmt(b.ci_high, 2)}]`)}
     ${kv('Доля пересборок, где разница > 0', `${fmt(b.prob_positive * 100, 1)}%`)}
-    <div style="padding-top:10px;">${badge(b.stable, '✓ Устойчиво (ДИ не содержит 0)', '○ ДИ содержит 0, разница не доказана')}</div>
   `;
 }
 
@@ -72,7 +71,6 @@ function renderPermutation(p) {
     ${kv('Реальное F', fmt(p.f_value, 4))}
     ${kv('p-value (перестановочный)', fmtP(p.p_value), p.significant ? 'var(--accent-2)' : undefined)}
     ${kv('Порог значимости', ALPHA)}
-    <div style="padding-top:10px;">${badge(p.significant, '✓ Реальное F в хвосте: различия есть', '○ Реальное F не выделяется среди перемешанных')}</div>
   `;
 }
 
@@ -106,7 +104,7 @@ function renderJackknife(j) {
         ${kv('p-value: среднее ± σ', `${fmt(j.p_mean, 4)} ± ${fmt(j.p_std_dev, 4)}`)}
       </div>
     </div>
-    <div style="padding-top:10px;">${jackknifeBadge(j)}</div>
+    
   `;
 }
 
@@ -129,9 +127,9 @@ function renderPValueHistogram(pValues) {
 
   const cap = document.getElementById('histCaption');
   if (cap) {
-    cap.innerHTML = counts[0] > 0
-      ? `Красная линия — порог p = 0.05. Зелёный столбец слева от неё — пересчёты со значимым результатом: ${counts[0]} из ${pValues.length}.`
-      : `Красная линия — порог p = 0.05. Значимых результатов (зелёный столбец слева от линии) нет: все ${pValues.length} пересчётов лежат правее порога.`;
+    // cap.innerHTML = counts[0] > 0
+    //   ? `Красная линия — порог p = 0.05. Зелёный столбец слева от неё — пересчёты со значимым результатом: ${counts[0]} из ${pValues.length}.`
+    //   : `Красная линия — порог p = 0.05. Значимых результатов (зелёный столбец слева от линии) нет: все ${pValues.length} пересчётов лежат правее порога.`;
   }
 
   el.innerHTML = counts.map((count, i) => {

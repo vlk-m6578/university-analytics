@@ -63,21 +63,21 @@
         <div class="update-badge" id="simStatus">Ожидание</div>
       </div>
 
-      <div class="stats-block" style="margin-bottom: 32px;">
-        <h3>О расчёте</h3>
-        <p style="font-size: 13px; color: var(--ink-muted); margin-top: 12px;">
+      <!-- <div class="stats-block" style="margin-bottom: 32px;"> -->
+        <!-- <h3>О расчёте</h3> -->
+        <!-- <p style="font-size: 13px; color: var(--ink-muted); margin-top: 12px;">
           Сравниваются суммы баллов ЦТ/ЦЭ у групп по важности бюджетного места
           (<strong>Бюджетники 8–10</strong> и <strong>Платники 1–3</strong>).
           Расчёт идёт на сервере по реальным ответам из опроса (1000 пересборок / перестановок)
           и запускается автоматически при открытии страницы.
           Из-за случайного перемешивания каждый расчёт даёт чуть другие числа.
-        </p>
+        </p> -->
         <div style="margin-top: 16px;">
-          <button id="runSimBtn" class="btn" style="width: auto; margin-top: 0; padding: 8px 20px; font-size: 13px;">
+          <button id="runSimBtn" class="btn" style="width: auto; margin-top: 0; padding: 8px 20px; font-size: 13px; margin-bottom: 52px">
             Пересчитать</button>
         </div>
         <div id="simError" style="color: #ff4d4d; margin-top: 12px; display: none;"></div>
-      </div>
+      <!-- </div> -->
 
       <div id="simulationResults" style="display: none;">
 
@@ -87,18 +87,18 @@
         </div>
 
         <!-- вывод*** -->
-        <div class="stats-block" style="margin-bottom: 32px;">
+        <!-- <div class="stats-block" style="margin-bottom: 32px;">
           <h3>Общий вывод</h3>
           <div id="conclusion" style="font-size: 14px; line-height: 1.6; margin-top: 12px;"></div>
-        </div>
+        </div> -->
 
         <div class="stats-row">
           <div class="stats-block">
             <h3><span class="term"
                 data-tooltip="Из каждой группы 1000 раз берём выборку с возвращением и считаем разницу средних. Если доверительный интервал не содержит 0 — разница настоящая">Бутстрэп-интервал
                 разницы</span></h3>
-            <p style="font-size: 13px; color: var(--ink-muted); margin-top: 8px;">Бюджетники − Платники, средний балл
-              ЦТ/ЦЭ</p>
+            <!-- <p style="font-size: 13px; color: var(--ink-muted); margin-top: 8px;">Бюджетники − Платники, средний балл
+              ЦТ/ЦЭ</p> -->
             <div id="bootstrapBlock" style="margin-top: 16px;"></div>
           </div>
 
@@ -106,8 +106,8 @@
             <h3><span class="term"
                 data-tooltip="Перемешиваем принадлежность к группам 1000 раз и смотрим, как часто случайное F не меньше реального. Это p-value, которое не зависит от формулы F-распределения">Перестановочный
                 ANOVA</span></h3>
-            <p style="font-size: 13px; color: var(--ink-muted); margin-top: 8px;">Лежит ли реальное F в «хвосте»
-              перемешанных вариантов? (по всем трём группам)</p>
+            <!-- <p style="font-size: 13px; color: var(--ink-muted); margin-top: 8px;">Лежит ли реальное F в «хвосте»
+              перемешанных вариантов? (по всем трём группам)</p> -->
             <div id="permutationBlock" style="margin-top: 16px;"></div>
           </div>
         </div>
@@ -116,8 +116,8 @@
           <h3><span class="term"
               data-tooltip="Удаляем по одному человеку и пересчитываем критерий Уэлча. Если значимость пропадает от удаления одного респондента — вывод хлипкий">Джекнайф
               (удаляем по одному)</span></h3>
-          <p style="font-size: 13px; color: var(--ink-muted); margin-top: 8px;">Держится ли результат на одном человеке?
-          </p>
+          <!-- <p style="font-size: 13px; color: var(--ink-muted); margin-top: 8px;">Держится ли результат на одном человеке?
+          </p> -->
           <div id="jackknifeBlock" style="margin-top: 16px;"></div>
         </div>
 
