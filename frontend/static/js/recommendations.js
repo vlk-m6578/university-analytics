@@ -200,7 +200,6 @@ async function searchRecommendations() {
   console.log('Ответ от бэка:', response);
 
   if (response && response.recommendations) {
-    // Фильтруем: оставляем только вузы с match_score > 0
     response.recommendations = response.recommendations.filter(rec => rec.match_score > 0);
   }
 

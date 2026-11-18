@@ -202,15 +202,12 @@ function renderTukeyTable(pairs, groupMeans) {
       </thead>
       <tbody>
         ${pairs.map(p => {
-    // Определяем, у какой группы средний балл выше
     const mean1 = groupMeans[p.group1];
     const mean2 = groupMeans[p.group2];
     const isGroup1Higher = mean1 > mean2;
     const isGroup2Higher = mean2 > mean1;
 
-    // Выбираем стрелку для группы 1
     const arrow1 = isGroup1Higher ? '↑' : (isGroup2Higher ? '↓' : '−');
-    // Выбираем стрелку для группы 2
     const arrow2 = isGroup2Higher ? '↑' : (isGroup1Higher ? '↓' : '−');
 
     return `

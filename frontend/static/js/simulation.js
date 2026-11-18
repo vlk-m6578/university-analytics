@@ -1,243 +1,252 @@
-const MOCK_SIMULATION_RESULT = {
-  iterations: 1000,
-  anova_significant_rate: 0.12,
-  tukey_results: [
-    { pair: "Mobile vs DevOps", rate: 87, ci: { lower: 5.2, upper: 18.5, mean: 12.9 } },
-    { pair: "Mobile vs Embedded", rate: 84, ci: { lower: 6.1, upper: 19.2, mean: 14.9 } },
-    { pair: "Mobile vs Backend", rate: 45, ci: { lower: -2.1, upper: 10.5, mean: 6.1 } },
-    { pair: "Mobile vs Frontend", rate: 22, ci: { lower: -5.5, upper: 8.2, mean: 3.4 } },
-    { pair: "Mobile vs DataScience", rate: 65, ci: { lower: 1.2, upper: 14.3, mean: 11.1 } },
-    { pair: "Embedded vs Backend", rate: 12, ci: { lower: -4.0, upper: 6.1, mean: 8.7 } },
-    { pair: "DevOps vs Frontend", rate: 8, ci: { lower: -3.5, upper: 7.2, mean: 9.5 } },
-    { pair: "DataScience vs Backend", rate: 15, ci: { lower: -2.1, upper: 5.3, mean: 5.0 } }
-  ],
-  p_value_histogram: [
-    { bin: "0.0-0.1", count: 120 },
-    { bin: "0.1-0.2", count: 80 },
-    { bin: "0.2-0.3", count: 70 },
-    { bin: "0.3-0.4", count: 90 },
-    { bin: "0.4-0.5", count: 100 },
-    { bin: "0.5-0.6", count: 110 },
-    { bin: "0.6-0.7", count: 105 },
-    { bin: "0.7-0.8", count: 95 },
-    { bin: "0.8-0.9", count: 115 },
-    { bin: "0.9-1.0", count: 115 }
-  ]
-};
+const ALPHA = 0.05;
+
+function esc(s) {
+  return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+
+function fmt(x, digits = 2) {
+  return (typeof x === 'number' && isFinite(x)) ? x.toFixed(digits) : '—';
+}
+
+function fmtP(p) {
+  if (typeof p !== 'number' || !isFinite(p)) return '—';
+  if (p === 0) return '< 0.001';
+  return p < 0.001 ? '< 0.001' : p.toFixed(4);
+}
+
+function kv(label, value, color) {
+  return `
+    <div style="display:flex; justify-content:space-between; gap:16px; padding:8px 0; border-bottom:1px solid var(--border);">
+      <span style="font-size:13px; color:var(--ink-muted);">${label}</span>
+      <span style="font-family:var(--mono); font-weight:600; ${color ? `color:${color};` : ''}">${value}</span>
+    </div>`;
+}
+
+function badge(ok, yes, no) {
+  return `<span class="${ok ? 'sig-yes' : 'sig-no'}" style="font-weight:600;">${ok ? yes : no}</span>`;
+}
+
+function renderGroups(groups) {
+  const el = document.getElementById('groupsContainer');
+  if (!el) return;
+  el.innerHTML = (groups || []).map(g => `
+    <div class="stat-card" style="flex:1; min-width:180px;">
+      <div class="stat-value">${fmt(g.mean, 1)}</div>
+      <div class="stat-label">${esc(g.name)}</div>
+      <div style="font-size:12px; color:var(--ink-muted); margin-top:6px; font-family:var(--mono);">n = ${g.count}</div>
+    </div>
+  `).join('');
+}
+
+function renderBootstrap(b) {
+  const el = document.getElementById('bootstrapBlock');
+  if (!el) return;
+
+  const maxAbs = Math.max(Math.abs(b.ci_low), Math.abs(b.ci_high), Math.abs(b.diff), 1) * 1.2;
+  const pos = v => Math.max(0, Math.min(100, ((v + maxAbs) / (2 * maxAbs)) * 100));
+  const left = pos(b.ci_low);
+  const width = Math.max(0, pos(b.ci_high) - left);
+  const color = b.stable ? 'var(--accent-2)' : 'var(--ink-muted)';
+
+  el.innerHTML = `
+    <div style="position:relative; height:28px; background:var(--bg-panel); border-radius:6px; overflow:hidden;">
+      <div style="position:absolute; top:50%; left:0; width:100%; height:2px; background:var(--border); transform:translateY(-50%);"></div>
+      <div style="position:absolute; top:50%; left:${left}%; width:${width}%; height:8px; background:${color}; transform:translateY(-50%); border-radius:4px;"></div>
+      <div style="position:absolute; top:50%; left:${pos(b.diff)}%; width:14px; height:14px; background:${color}; border:2px solid var(--bg-card); border-radius:50%; transform:translate(-50%,-50%); z-index:2;"></div>
+      <div style="position:absolute; top:0; left:50%; height:100%; width:1.5px; background:#f44336; z-index:1;"></div>
+    </div>
+    <div style="display:flex; justify-content:space-between; font-size:11px; font-family:var(--mono); color:var(--ink-muted); margin:4px 0 16px;">
+      <span>${fmt(-maxAbs, 1)}</span><span style="color:#f44336;">0</span><span>${fmt(maxAbs, 1)}</span>
+    </div>
+    ${kv('Разница средних', fmt(b.diff, 2))}
+    ${kv('95% ДИ', `[${fmt(b.ci_low, 2)}; ${fmt(b.ci_high, 2)}]`)}
+    ${kv('Доля пересборок, где разница > 0', `${fmt(b.prob_positive * 100, 1)}%`)}
+    <div style="padding-top:10px;">${badge(b.stable, '✓ Устойчиво (ДИ не содержит 0)', '○ ДИ содержит 0, разница не доказана')}</div>
+  `;
+}
+
+function renderPermutation(p) {
+  const el = document.getElementById('permutationBlock');
+  if (!el) return;
+  el.innerHTML = `
+    ${kv('Реальное F', fmt(p.f_value, 4))}
+    ${kv('p-value (перестановочный)', fmtP(p.p_value), p.significant ? 'var(--accent-2)' : undefined)}
+    ${kv('Порог значимости', ALPHA)}
+    <div style="padding-top:10px;">${badge(p.significant, '✓ Реальное F в хвосте: различия есть', '○ Реальное F не выделяется среди перемешанных')}</div>
+  `;
+}
+
+function jackknifeVerdict(j) {
+  if (j.total > 0 && j.significant_count === 0) return 'stable_ns';
+  if (j.total > 0 && j.significant_count === j.total) return 'stable_sig';
+  return 'unstable';
+}
+
+function jackknifeBadge(j) {
+  const v = jackknifeVerdict(j);
+  if (v === 'stable_ns') return '<span class="sig-no" style="font-weight:600;">○ Стабильно незначимо: ни один респондент не меняет вывод (различий нет)</span>';
+  if (v === 'stable_sig') return '<span class="sig-yes" style="font-weight:600;">✓ Стабильно значимо: различие сохраняется при удалении любого респондента</span>';
+  return '<span class="sig-no" style="font-weight:600;">✗ Хлипкий вывод: значимость зависит от отдельных респондентов</span>';
+}
+
+function renderJackknife(j) {
+  const el = document.getElementById('jackknifeBlock');
+  if (!el) return;
+  const share = j.total ? (j.significant_count / j.total) * 100 : 0;
+  el.innerHTML = `
+    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(260px, 1fr)); gap:0 32px;">
+      <div>
+        ${kv('Базовая разница средних', fmt(j.base_diff, 2))}
+        ${kv('Всего пересчётов (n групп 1 + n групп 2)', j.total)}
+        ${kv('Значимых (p < 0.05)', `${j.significant_count} из ${j.total} (${fmt(share, 1)}%)`)}
+      </div>
+      <div>
+        ${kv('p-value: минимум', fmtP(j.p_min))}
+        ${kv('p-value: максимум', fmtP(j.p_max))}
+        ${kv('p-value: среднее ± σ', `${fmt(j.p_mean, 4)} ± ${fmt(j.p_std_dev, 4)}`)}
+      </div>
+    </div>
+    <div style="padding-top:10px;">${jackknifeBadge(j)}</div>
+  `;
+}
+
+function renderPValueHistogram(pValues) {
+  const el = document.getElementById('pValueHistogram');
+  if (!el) return;
+
+  if (!pValues || !pValues.length) {
+    el.innerHTML = '<div style="color:var(--ink-muted); margin:auto;">Нет данных</div>';
+    return;
+  }
+
+  const BINS = 20;
+  const counts = new Array(BINS).fill(0);
+  pValues.forEach(v => {
+    const idx = Math.min(BINS - 1, Math.max(0, Math.floor(v * BINS)));
+    counts[idx]++;
+  });
+  const maxCount = Math.max(...counts, 1);
+
+  const cap = document.getElementById('histCaption');
+  if (cap) {
+    cap.innerHTML = counts[0] > 0
+      ? `Красная линия — порог p = 0.05. Зелёный столбец слева от неё — пересчёты со значимым результатом: ${counts[0]} из ${pValues.length}.`
+      : `Красная линия — порог p = 0.05. Значимых результатов (зелёный столбец слева от линии) нет: все ${pValues.length} пересчётов лежат правее порога.`;
+  }
+
+  el.innerHTML = counts.map((count, i) => {
+    const h = (count / maxCount) * 250;
+    const significant = i === 0;
+    const tick = i % 5 === 0 ? (i / BINS).toFixed(2) : '';
+    const endTick = i === BINS - 1
+      ? '<span style="position:absolute; right:0; top:6px; white-space:nowrap;">1.00</span>'
+      : '';
+    return `
+      <div style="flex:1 1 0; min-width:0; display:flex; flex-direction:column; justify-content:flex-end; height:100%;">
+        <div style="font-size:10px; font-family:var(--mono); text-align:center; margin-bottom:4px; overflow:hidden; min-height:14px;">${count > 0 ? count : ''}</div>
+        <div style="width:100%; height:${h}px; background:${significant ? 'var(--accent-2)' : 'var(--ink)'}; border-radius:2px 2px 0 0; transition:height 0.5s ease;"></div>
+        <div style="position:relative; height:24px; font-size:10px; font-family:var(--mono); color:var(--ink-muted);">
+          <span style="position:absolute; left:0; top:6px; white-space:nowrap;">${tick}</span>${endTick}
+        </div>
+      </div>`;
+  }).join('') + `
+    <div style="position:absolute; top:0; bottom:24px; left:5%; width:0; border-left:2px dashed #f44336; pointer-events:none;"></div>
+    <div style="position:absolute; top:0; left:5%; margin-left:6px; font-size:11px; font-family:var(--mono); color:#f44336; white-space:nowrap;">порог p = 0.05</div>`;
+  el.style.position = 'relative';
+}
+
+function renderConclusion(d) {
+  const el = document.getElementById('conclusion');
+  if (!el) return;
+
+  const b = d.bootstrap, p = d.permutation, j = d.jackknife;
+  const who = b.diff > 0 ? 'Бюджетники набирают больше баллов' : 'Платники набирают больше баллов';
+  const lines = [];
+
+  lines.push(b.stable
+    ? `<strong>Бутстрэп:</strong> ${who.toLowerCase()}; 95% интервал разницы [${fmt(b.ci_low, 1)}; ${fmt(b.ci_high, 1)}] не содержит нуля, значит различие между группами настоящее.`
+    : `<strong>Бутстрэп:</strong> интервал разницы [${fmt(b.ci_low, 1)}; ${fmt(b.ci_high, 1)}] содержит ноль, поэтому различие между группами нельзя считать доказанным.`);
+
+  lines.push(p.significant
+    ? `<strong>Перестановочный ANOVA:</strong> реальное F = ${fmt(p.f_value, 2)} лежит в хвосте перемешанных вариантов (p = ${fmtP(p.p_value)}), различия есть и без опоры на формулу.`
+    : `<strong>Перестановочный ANOVA:</strong> реальное F = ${fmt(p.f_value, 2)} не выделяется среди перемешанных вариантов (p = ${fmtP(p.p_value)}).`);
+
+  const jv = jackknifeVerdict(j);
+  lines.push(jv === 'stable_ns'
+    ? `<strong>Джекнайф:</strong> при удалении любого одного респондента различие так и остаётся незначимым (значимых ${j.significant_count} из ${j.total}), то есть результат не держится на одном человеке.`
+    : jv === 'stable_sig'
+      ? `<strong>Джекнайф:</strong> различие остаётся значимым при удалении любого одного респондента (значимых ${j.significant_count} из ${j.total}), результат не держится на одном человеке.`
+      : `<strong>Джекнайф:</strong> значимость меняется при удалении отдельных респондентов (значимых ${j.significant_count} из ${j.total}), вывод хлипкий.`);
+
+  const votes = [b.stable, p.significant, jv === 'stable_sig'];
+  const yes = votes.filter(Boolean).length;
+  let summary;
+  if (yes === 0 && jv === 'stable_ns') {
+    summary = 'Итог: все три метода согласны, связи между баллом ЦТ/ЦЭ и важностью бюджета обнаружить не удалось, и этот вывод устойчив.';
+  } else if (yes === 3) {
+    summary = 'Итог: все три метода согласны, различие между группами настоящее и устойчивое.';
+  } else {
+    summary = 'Итог: методы расходятся, вывод о различии между группами ненадёжен, нужно больше данных.';
+  }
+  lines.unshift(`<strong style="font-size:15px;">${summary}</strong>`);
+
+  el.innerHTML = lines.map(l => `<p style="margin-bottom:8px;">${l}</p>`).join('');
+}
+
+function renderSimulationResults(d) {
+  renderGroups(d.groups);
+  renderConclusion(d);
+  renderBootstrap(d.bootstrap);
+  renderPermutation(d.permutation);
+  renderJackknife(d.jackknife);
+  renderPValueHistogram(d.jackknife.p_values);
+}
 
 async function runSimulation() {
   const runBtn = document.getElementById('runSimBtn');
-  const iterationsInput = document.getElementById('iterationsInput');
   const resultsDiv = document.getElementById('simulationResults');
   const statusBadge = document.getElementById('simStatus');
   const errorDiv = document.getElementById('simError');
 
-  const iterations = parseInt(iterationsInput.value);
-  if (isNaN(iterations) || iterations < 100 || iterations > 10000) {
-    errorDiv.style.display = 'block';
-    errorDiv.innerText = 'Введите число от 100 до 10000';
-    return;
-  }
-
   errorDiv.style.display = 'none';
   runBtn.disabled = true;
-  runBtn.innerText = 'Симуляция...';
+  runBtn.innerText = 'Считаем...';
   statusBadge.innerText = 'Выполняется';
   resultsDiv.style.display = 'none';
 
-  setTimeout(() => {
-    const data = { ...MOCK_SIMULATION_RESULT };
+  const data = await apiRequest('/api/simulation');
 
-    data.iterations = iterations;
-    data.anova_significant_rate = 0.10 + (Math.random() * 0.05);
+  runBtn.disabled = false;
+  runBtn.innerText = 'Пересчитать';
 
-    data.tukey_results = data.tukey_results.map(item => {
-      const newRate = Math.min(99, Math.max(1, item.rate + (Math.random() * 4 - 2)));
-      return {
-        ...item,
-        rate: newRate,
-        ci: {
-          lower: item.ci.lower + (Math.random() * 1 - 0.5),
-          upper: item.ci.upper + (Math.random() * 1 - 0.5),
-          mean: item.ci.mean + (Math.random() * 0.5 - 0.25)
-        }
-      };
-    });
-
-    renderSimulationResults(data);
-
-    runBtn.disabled = false;
-    runBtn.innerText = 'Запустить симуляцию';
-    statusBadge.innerText = 'Завершено';
-    resultsDiv.style.display = 'block';
-  }, 1500);
-}
-
-function renderSimulationResults(data) {
-  const anovaPercent = (data.anova_significant_rate * 100).toFixed(1);
-  document.getElementById('anovaStability').innerHTML = `
-        ${anovaPercent}% 
-        <span style="font-size: 12px; color: var(--ink-muted); font-weight: 400; margin-left: 8px;">
-            (${Math.round(data.anova_significant_rate * data.iterations)} из ${data.iterations})
-        </span>
-    `;
-
-  const tbody = document.getElementById('tukeyTableBody');
-  if (tbody) {
-    tbody.innerHTML = data.tukey_results.map(item => {
-      const isSignificant = item.rate > 50;
-      return `
-        <tr>
-          <td>${item.pair}</td>
-          <td style="font-family: var(--mono); font-weight: 600; color: ${isSignificant ? 'var(--accent-2)' : 'var(--ink-muted)'};">
-            ${item.rate.toFixed(1)}%
-          </td>
-          <td style="font-family: var(--mono);">[${item.ci.lower.toFixed(1)}; ${item.ci.upper.toFixed(1)}]</td>
-          <td class="${isSignificant ? 'sig-yes' : 'sig-no'}">${isSignificant ? '✓ Устойчиво' : '○ Случайно'}</td>
-        </tr>
-      `;
-    }).join('');
+  if (!data) {
+    statusBadge.innerText = 'Ошибка';
+    errorDiv.style.display = 'block';
+    errorDiv.innerText = 'Не удалось получить данные с сервера. Проверьте, что бэкенд запущен.';
+    return;
   }
 
-  const histContainer = document.getElementById('pValueHistogram');
-  if (histContainer) {
-    const maxCount = Math.max(...data.p_value_histogram.map(b => b.count));
-
-    histContainer.innerHTML = data.p_value_histogram.map(bin => {
-      const heightPx = (bin.count / maxCount) * 250;
-
-      return `
-              <div style="flex: 1; display: flex; flex-direction: column; justify-content: flex-end; height: 100%; position: relative;">
-                  <!-- Значение сверху -->
-                  <div style="font-size: 11px; font-family: var(--mono); color: var(--ink); text-align: center; margin-bottom: 4px;">${bin.count}</div>
-                  
-                  <!-- Сам столбец -->
-                  <div style="width: 100%; height: ${heightPx}px; background: var(--ink); border-radius: 2px 2px 0 0; transition: height 0.5s ease;"></div>
-                  
-                  <!-- Подпись снизу (диапазон) -->
-                  <div style="height: 40px; display: flex; align-items: flex-start; justify-content: center;">
-                      <div style="font-size: 9px; font-family: var(--mono); color: var(--ink-muted); white-space: nowrap; transform: rotate(-45deg); transform-origin: top center; margin-top: 8px;">${bin.bin}</div>
-                  </div>
-              </div>
-          `;
-    }).join('');
+  if (data.message) {
+    statusBadge.innerText = 'Мало данных';
+    errorDiv.style.display = 'block';
+    errorDiv.innerText = 'Недостаточно ответов для моделирования: нужно минимум по 2 респондента в группах «Бюджетники (8–10)» и «Платники (1–3)».';
+    return;
   }
 
-  const matrixObj = {};
-  data.tukey_results.forEach(r => matrixObj[r.pair] = r.rate);
-  renderHeatmap(matrixObj);
-
-  renderAllLollipops(data.tukey_results);
+  renderSimulationResults(data);
+  statusBadge.innerText = 'Завершено';
+  resultsDiv.style.display = 'block';
 }
 
-function renderAllLollipops(tukeyResults) {
-  const container = document.getElementById('lollipopContainer');
-  if (!container) return;
-
-  const scale = 20;
-
-  container.innerHTML = tukeyResults.map(item => {
-    let leftPercent = (item.ci.lower / scale) * 100;
-    let widthPercent = ((item.ci.upper - item.ci.lower) / scale) * 100;
-    let meanPercent = (item.ci.mean / scale) * 100;
-
-    leftPercent = Math.max(0, Math.min(100, leftPercent));
-    widthPercent = Math.max(0, Math.min(100 - leftPercent, widthPercent));
-    meanPercent = Math.max(0, Math.min(100, meanPercent));
-
-    const isSignificant = item.ci.lower > 0;
-    const color = isSignificant ? 'var(--accent-2)' : 'var(--ink-muted)';
-
-    return `
-      <div style="margin-bottom: 16px;">
-        <div style="display: flex; justify-content: space-between; font-size: 12px; font-family: var(--mono); margin-bottom: 4px;">
-          <span>${item.pair}</span>
-          <span style="color: ${color}; font-weight: 600;">
-            ${isSignificant ? '✓ значимо' : '○ не значимо'}
-          </span>
-        </div>
-        
-        <div style="position: relative; height: 24px; background: var(--bg-panel); border-radius: 6px; overflow: hidden;">
-          <!-- Линия оси -->
-          <div style="position: absolute; top: 50%; left: 0; width: 100%; height: 2px; background: var(--border); transform: translateY(-50%);"></div>
-          
-          <!-- Интервал -->
-          <div style="position: absolute; top: 50%; left: ${leftPercent}%; width: ${widthPercent}%; height: 6px; background: ${color}; transform: translateY(-50%); border-radius: 3px;"></div>
-          
-          <!-- Среднее (кружок) -->
-          <div style="position: absolute; top: 50%; left: ${meanPercent}%; width: 12px; height: 12px; background: ${color}; border: 2px solid var(--bg-card); border-radius: 50%; transform: translate(-50%, -50%); z-index: 2;"></div>
-          
-          <!-- Линия нуля -->
-          <div style="position: absolute; top: 0; left: 0; height: 100%; width: 1.5px; background: #f44336; z-index: 1;"></div>
-        </div>
-        
-        <div style="display: flex; justify-content: space-between; font-size: 10px; color: var(--ink-muted); font-family: var(--mono); margin-top: 2px;">
-          <span>${item.ci.lower.toFixed(1)}</span>
-          <span>${item.ci.upper.toFixed(1)}</span>
-        </div>
-      </div>
-    `;
-  }).join('');
-}
-
-function renderHeatmap(matrix) {
-  const container = document.getElementById('heatmapContainer');
-  if (!container) return;
-
-  const pairs = Object.entries(matrix).sort((a, b) => b[1] - a[1]);
-
-  container.innerHTML = pairs.map(([pair, percent]) => {
-    const greenOpacity = percent / 100;
-    const bgColor = `rgba(76, 175, 80, ${greenOpacity})`;
-    const textColor = percent > 50 ? '#fff' : 'var(--ink)';
-
-    return `
-            <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 12px; padding: 8px; border-radius: 8px; background: var(--bg-panel);">
-                <div style="width: 150px; font-family: var(--mono); font-size: 12px;">${pair.replace(/_/g, ' ')}</div>
-                <div style="flex: 1; height: 24px; background: var(--border); border-radius: 12px; overflow: hidden; position: relative;">
-                    <div style="width: ${percent}%; height: 100%; background: ${bgColor}; transition: width 0.5s;"></div>
-                </div>
-                <div style="width: 50px; text-align: right; font-family: var(--mono); font-weight: 600; color: ${textColor};">${percent.toFixed(1)}%</div>
-            </div>
-        `;
-  }).join('');
-}
-
-function renderLollipop(ci) {
-  const container = document.getElementById('lollipopContainer');
-  if (!container) return;
-
-  const scale = 20;
-
-  let leftPercent = (ci.lower / scale) * 100;
-  let widthPercent = ((ci.upper - ci.lower) / scale) * 100;
-  let meanPercent = (ci.mean / scale) * 100;
-
-  leftPercent = Math.max(0, Math.min(100, leftPercent));
-  widthPercent = Math.max(0, Math.min(100 - leftPercent, widthPercent));
-  meanPercent = Math.max(0, Math.min(100, meanPercent));
-
-  container.innerHTML = `
-        <div style="position: relative; height: 60px; margin-top: 20px; background: var(--bg-panel); border-radius: 8px; overflow: hidden;">
-            <!-- Линия оси -->
-            <div style="position: absolute; top: 50%; left: 0; width: 100%; height: 2px; background: var(--border); transform: translateY(-50%);"></div>
-            
-            <!-- Интервал -->
-            <div style="position: absolute; top: 50%; left: ${leftPercent}%; width: ${widthPercent}%; height: 8px; background: var(--ink); transform: translateY(-50%); border-radius: 4px;"></div>
-            
-            <!-- Среднее (кружок) -->
-            <div style="position: absolute; top: 50%; left: ${meanPercent}%; width: 16px; height: 16px; background: var(--accent); border: 3px solid var(--bg-card); border-radius: 50%; transform: translate(-50%, -50%); z-index: 2;"></div>
-            
-            <!-- Метка 0 -->
-            <div style="position: absolute; top: 0; left: 0; height: 100%; width: 2px; background: #f44336; z-index: 1;"></div>
-            <div style="position: absolute; bottom: -20px; left: 0; font-size: 11px; color: #f44336; font-family: var(--mono);">0</div>
-        </div>
-    `;
+async function loadFooterCount() {
+  const responses = await API.fetchResponses();
+  const el = document.getElementById('footerCount');
+  if (el && Array.isArray(responses)) el.innerText = `${responses.length} участников`;
 }
 
 document.addEventListener('DOMContentLoaded', () => {
   const runBtn = document.getElementById('runSimBtn');
-  if (runBtn) {
-    runBtn.addEventListener('click', runSimulation);
-  }
+  if (runBtn) runBtn.addEventListener('click', runSimulation);
+  loadFooterCount();
+  runSimulation(); 
 });

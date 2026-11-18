@@ -4,8 +4,38 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ВУЗ-Аналитика | Моделирование Монте-Карло</title>
+  <title>ВУЗ-Аналитика | Моделирование</title>
   <link rel="stylesheet" href="static/css/style.css">
+  <style>
+    .main {
+      min-width: 0;
+      max-width: 100%;
+    }
+
+    .stats-row>*,
+    .stats-block,
+    .table-wrapper {
+      min-width: 0;
+    }
+
+    .table-wrapper {
+      overflow-x: hidden;
+    }
+
+    .term:hover::after {
+      white-space: normal;
+      width: 280px;
+      max-width: 70vw;
+      left: 0;
+      transform: none;
+      line-height: 1.4;
+    }
+
+    .term:hover::before {
+      left: 24px;
+      transform: none;
+    }
+  </style>
 </head>
 
 <body>
@@ -27,82 +57,75 @@
     <main class="main">
       <div class="header">
         <div>
-          <h1>МОНТЕ-КАРЛО <span>моделирование</span></h1>
-          <p>Проверка устойчивости статистических выводов методом бутстрэпа</p>
+          <h1>МОДЕЛИРОВАНИЕ <span>устойчивость выводов</span></h1>
+          <p>Бутстрэп, перестановочный ANOVA и джекнайф: проверяем, что вывод о важности бюджета не случаен</p>
         </div>
         <div class="update-badge" id="simStatus">Ожидание</div>
       </div>
 
       <div class="stats-block" style="margin-bottom: 32px;">
-        <h3>Параметры симуляции</h3>
-        <div style="display: flex; gap: 24px; align-items: flex-end; flex-wrap: wrap; margin-top: 16px;">
-          <div style="flex: 1; min-width: 200px;">
-            <label style="font-size: 12px; color: var(--ink-muted); display: block; margin-bottom: 8px;">Количество
-              итераций (N)</label>
-            <input type="number" id="iterationsInput" value="1000" min="100" max="10000" step="100"
-              style="width: 100%; padding: 12px 16px; border: 1.5px solid var(--border); border-radius: var(--r-sm); background: var(--bg); font-family: var(--mono); font-size: 16px;">
-          </div>
-          <button id="runSimBtn" class="btn" style="width: auto; margin-top: 0; padding: 12px 32px;">Запустить
-            симуляцию</button>
+        <h3>О расчёте</h3>
+        <p style="font-size: 13px; color: var(--ink-muted); margin-top: 12px;">
+          Сравниваются суммы баллов ЦТ/ЦЭ у групп по важности бюджетного места
+          (<strong>Бюджетники 8–10</strong> и <strong>Платники 1–3</strong>).
+          Расчёт идёт на сервере по реальным ответам из опроса (1000 пересборок / перестановок)
+          и запускается автоматически при открытии страницы.
+          Из-за случайного перемешивания каждый расчёт даёт чуть другие числа.
+        </p>
+        <div style="margin-top: 16px;">
+          <button id="runSimBtn" class="btn" style="width: auto; margin-top: 0; padding: 8px 20px; font-size: 13px;">
+            Пересчитать</button>
         </div>
         <div id="simError" style="color: #ff4d4d; margin-top: 12px; display: none;"></div>
       </div>
 
       <div id="simulationResults" style="display: none;">
 
+        <div class="stats-block" style="margin-bottom: 32px;">
+          <h3>Группы по важности бюджета</h3>
+          <div id="groupsContainer" style="display: flex; gap: 16px; flex-wrap: wrap; margin-top: 16px;"></div>
+        </div>
+
+        <!-- вывод*** -->
+        <div class="stats-block" style="margin-bottom: 32px;">
+          <h3>Общий вывод</h3>
+          <div id="conclusion" style="font-size: 14px; line-height: 1.6; margin-top: 12px;"></div>
+        </div>
+
         <div class="stats-row">
           <div class="stats-block">
-            <h3>Устойчивость ANOVA (p-value)</h3>
-            <p style="font-size: 13px; color: var(--ink-muted); margin-bottom: 16px;">Как часто ANOVA показывал значимые
-              различия (p < 0.05) на 1000 псевдовыборках?</p>
-                <div id="anovaStability"
-                  style="font-family: var(--mono); font-size: 24px; font-weight: 600; color: var(--accent);">—</div>
+            <h3><span class="term"
+                data-tooltip="Из каждой группы 1000 раз берём выборку с возвращением и считаем разницу средних. Если доверительный интервал не содержит 0 — разница настоящая">Бутстрэп-интервал
+                разницы</span></h3>
+            <p style="font-size: 13px; color: var(--ink-muted); margin-top: 8px;">Бюджетники − Платники, средний балл
+              ЦТ/ЦЭ</p>
+            <div id="bootstrapBlock" style="margin-top: 16px;"></div>
           </div>
+
           <div class="stats-block">
-            <h3>Общий вывод</h3>
-            <p style="font-size: 13px; color: var(--ink-muted); margin-bottom: 16px;">На основе 1000 симуляций:</p>
-            <div style="font-size: 14px; line-height: 1.6;">
-              <p>Глобальный ANOVA нестабилен. Однако разница между <strong>Mobile и DevOps</strong> подтверждается в
-                большинстве случаев. Это доказывает, что направление Mobile действительно является аутсайдером, и этот
-                вывод не зависит от случайных колебаний выборки.</p>
-            </div>
+            <h3><span class="term"
+                data-tooltip="Перемешиваем принадлежность к группам 1000 раз и смотрим, как часто случайное F не меньше реального. Это p-value, которое не зависит от формулы F-распределения">Перестановочный
+                ANOVA</span></h3>
+            <p style="font-size: 13px; color: var(--ink-muted); margin-top: 8px;">Лежит ли реальное F в «хвосте»
+              перемешанных вариантов? (по всем трём группам)</p>
+            <div id="permutationBlock" style="margin-top: 16px;"></div>
           </div>
         </div>
 
-        <div class="table-wrapper">
-          <h3>Устойчивость попарных сравнений (Тьюки)</h3>
-          <p style="font-size: 13px; color: var(--ink-muted); margin-bottom: 16px;">В скольких процентах из 1000
-            симуляций разница между парами направлений была статистически значимой?</p>
-          <table class="stats-table" style="width:100%; border-collapse: collapse; margin-top: 16px;">
-            <thead>
-              <tr>
-                <th>Пара направлений</th>
-                <th>Устойчивость (%)</th>
-                <th>95% ДИ разницы</th>
-                <th>Вывод</th>
-              </tr>
-            </thead>
-            <tbody id="tukeyTableBody">
-            </tbody>
-          </table>
+        <div class="stats-block" style="margin-bottom: 32px;">
+          <h3><span class="term"
+              data-tooltip="Удаляем по одному человеку и пересчитываем критерий Уэлча. Если значимость пропадает от удаления одного респондента — вывод хлипкий">Джекнайф
+              (удаляем по одному)</span></h3>
+          <p style="font-size: 13px; color: var(--ink-muted); margin-top: 8px;">Держится ли результат на одном человеке?
+          </p>
+          <div id="jackknifeBlock" style="margin-top: 16px;"></div>
         </div>
 
         <div class="table-wrapper">
-          <h3>Гистограмма распределения p-value (ANOVA)</h3>
+          <h3>Распределение p-value при удалении одного респондента</h3>
+          <p id="histCaption" style="font-size: 13px; color: var(--ink-muted); margin-bottom: 8px;"></p>
           <div id="pValueHistogram"
-            style="height: 350px; display: flex; align-items: flex-end; gap: 6px; padding-top: 20px;"></div>
-        </div>
-
-        <div class="stats-row">
-          <div class="stats-block">
-            <h3>Тепловая карта устойчивости пар</h3>
-            <div id="heatmapContainer" style="margin-top: 16px;"></div>
-          </div>
-          <div class="stats-block">
-            <h3>Интервал разницы</h3>
-            <div id="lollipopContainer" style="margin-top: 16px;">
-            </div>
-          </div>
+            style="height: 350px; display: flex; align-items: flex-end; gap: 4px; padding-top: 20px;"></div>
         </div>
 
       </div>
@@ -111,7 +134,6 @@
     </main>
   </div>
 
-  <script src="static/js/mock-data.js"></script>
   <script src="static/js/api.js"></script>
   <script src="static/js/simulation.js"></script>
 </body>
